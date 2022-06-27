@@ -348,12 +348,59 @@ npm run serve
 全局状态共享: 把数据在多个.vue文件中共享
 
 - 实现方案: 把 store对象, 存储到 vue的实例对象里 -- `main.js`
-- 使用时
-  - 把共享的数据存储在 store.state 属性里
-  - 利用 `$store.state` 来读取属性
+- `state`
+  - 把共享的数据存储在 `store.state` 属性里
+  - 利用 `$store.state` 来读取属性(`{{}}`中可以省略this)
+  - 辅助函数`...mapState([value])`（在`computed`属性中引入）
+
+```js
+//...mapState原理
+function mapState(names){
+  let obj = {}
+  names.forEach(name=>{
+    obj[name] = function(){
+      return this.$store.state(name)
+    }
+  })
+  return obj
+}
+```
+
+- `mutations`
   - 为了安全性考虑: 要修改属性必须通过指定的方法
-    - 在`mutations`属性里, 制作函数
-    - 触发时, 需要用 `commit` 来触发
+  - 在`mutations`中存放`函数名（state,参数）`
+  - 需要用 `this.$store.commit(函数名，参数)` 来触发
+  - 辅助函数`...mapMutations(函数名)`，使用时`函数名(参数)`
+
+```js
+//...mapMutations原理
+function mapMutations(funcs){
+  let obj = {}
+  funcs.forEach(func=>{
+    obj[func] = function(){
+      return this.$store.commit(func,arguments[0])
+    }
+  })
+  return obj
+}
+```
+
+- `getters`
+  - 计算属性，利用`state`中已有的值计算新值
+  - `getters`中存放`函数名（state）`
+  - `$store.getters.函数名`
+  - 辅助函数`...mapGetters([函数名])`
+- `actions`
+  - 存放网络请求相关操作，请求的数据在多个组件中使用时可以采用该方法
+  - `actions`中存放`函数名（store,参数）`
+  - `this.$store.dispatch(函数名)`
+  - 辅助函数`...mapActions(方法名)`
+  - `actions`添加方法，发送请求-->`state`中添加属性，保存请求的返回值-->`mutations`中添加方法更新`state`中的值-->请求结束后，触发`mutations`中 的方法，来把值更新到`state`中
+- `modules`
+  - 用于大型项目拆分模块
+  - 引入模块`import ... from ...`
+  - `modules`存放引入模块的名称
+  - 使用时在`state`中引入`模块名称`，模块中的数据`{{模块名称.属性}}`
 
 
 
