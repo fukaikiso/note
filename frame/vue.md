@@ -208,6 +208,10 @@ npm run serve
     - `import axios from 'axios'`（仅原型注入axios无代码提示）
     - `import VueAxios from 'vue-axios';`
     - `Vue.use(VueAxios, axios)`,use:是vue提供的专门加载第三方模块的方法
+- axios的基础路径属性
+  - `axios.defaults.baseURL = '...'`
+  - 作用: 用axios发的请求, 如果是相对路径 则会自动拼接到这个路径后
+  - 注意: 必须在 use 前设置, 然后再注入到vue里
 
 - 使用时, 固定语法
   - get: `axios.get(地址).then(res=>{})`
@@ -288,7 +292,7 @@ npm run serve
 
 - App.vue
   - <自定义组件  :需要传的参数="..."  />
-- 组件
+- 自定义组件组件
   - export default中`props: ['参数']`
 
 #### 2.2.7 插槽

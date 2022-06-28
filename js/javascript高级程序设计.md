@@ -1452,6 +1452,23 @@ printPerson2('1st', person, '2nd');
 // 'Matt', 27
 ```
 
+#### 5.1.10 常用对象静态方法
+
+[MDN-object静态方法](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object)
+
+```js
+'use strict'
+//使对象无法增加属性
+Object.preventExtensions()
+//使对象无法增、删属性
+Object.seal()
+//使对象无法增、删、改属性
+Object.freeze()
+//通过复制一个或多个对象来创建一个新的对象。
+Object.assign()
+...
+```
+
 ### 5.2 创建对象
 
 #### 5.2.1 工厂模式
