@@ -36,9 +36,24 @@ npm run serve
 - main.js: 引入了 App.vue , 然后加载到 `id=app` 的元素上
 - App.vue: 导出vue代码
 
+### 1.4 编译
 
+```shell
+npm run build
+```
 
-## 2.vue基础使用
+#### 1.5 本地服务器
+
+**vue项目执行npm run build之后生成的dist文件**，**不能直接通过vscode开启服务访问，会报错**
+
+```shell
+安装
+serve  npm install serve -S -g 
+启动服务
+serve dist
+```
+
+## 2.vue2基础使用
 
 ### 2.1 创建vue对象
 
@@ -406,7 +421,397 @@ function mapMutations(funcs){
   - `modules`存放引入模块的名称
   - 使用时在`state`中引入`模块名称`，模块中的数据`{{模块名称.属性}}`
 
+## 3.Vue3基础使用
+
+### 3.1 TypeScript
+
+[官方文档](https://www.typescriptlang.org/docs/)
+
+#### 3.1.1 安装
+
+`npm install -g typescript`
+
+#### 3.1.2 使用
+
+`tsc 文件名`
+
+#### 3.1.2 特性
+
+- 强类型语言，代码非常严格, 有任何错误 都会`静态报错`
+- TS支持为变量声明数据类型
+- 编译工具的原理: 把TS中的特殊语法去掉,转为JS
+- TS语言不能直接运行, 必须转换成 JS 才能运行, 这就需要编译工具的配合
+- TS会检测同时打开的文件中, 是否有同名的变量, 并报错
+
+### 3.2 vue3的特点
+
+>  vue3 不再要求只能有唯一的根元素，支持使用Typescript
+>
+> vue3没有全局的东西，不存在this关键词
+
+#### 3.2.1 默认属性
+
+- 改造1
+  - vue2的属性默认自动`全部`响应式. 一旦某些属性不需要响应式 则浪费资源
+  - vue3: 手动用 `ref` 把值(`普通数据类型`)改成响应式
+  - `缺点`: vue3的ref写法, 只能一个个改
+
+```typescript
+import { defineComponent, ref } from 'vue'
+export default defineComponent({
+  // setup: 相当于创建周期, 组件创建完毕时触发
+  setup() {
+    console.log('setup:组件创建完毕!')
+    // vue2: data中的所有属性都是响应式的, 只要修改数据页面会自动变
+    // -- 底层为了实现这种效果, 需要为每个属性添加监听器
+    // -- 问题: 浪费额外的资源
+    // vue3: 把数据的监听器 改为手动模式 -- 由用户来选择哪些加哪些不加
+    // ref(): 会把普通的值, 装载到一个具有监听器的对象里. 值的变化就会自动更新DOM元素
+    var num = ref(10)
+    console.log('num:', num)
+    // 这个return相当于  data(){ return{} }
+    // 只有书写在这个{}对象中的属性, 才能在页面上使用
+    return {
+      num: 10,
+      count: ref(10), //带监听器的10
+    }
+  },
+})
+```
+
+- 改造2:
+  - 提供 reactive 方式: 直接把对象类型改成响应式
+  - 缺点: 使用时必须用 `data.` 来取值，直接用扩展运算符会取消data的响应式
+
+```typescript
+import { defineComponent, reactive, ref } from 'vue'
+export default defineComponent({
+  setup() {
+    // vue3 手动为每个属性添加响应式特征, 太累
+    // 作者: 提供了 reactive, 可以批量为多个属性添加响应式
+    const data = reactive({
+      num: 10,
+      count: 20,
+    })
+
+    return { data, n: ref(100) }
+  },
+})
+```
+
+- 改造3:
+  - 能不能 像reactive方式一次改多个, 又能像`ref`方式 使用时直接用?
+  - 作者提供了 `toRefs` 的方法:  把 reactive改造的对象中的属性, 全都转换成1个1个的 ref 方式的属性
+
+```typescript
+import { defineComponent, reactive, toRefs } from 'vue'
+export default defineComponent({
+  setup() {
+    // 一次性改多个属性为响应式
+    const data = reactive({
+      num: 10,
+      count: 20,
+    })
+
+    // ... 展开语法, 把对象中的属性 展开放在其他对象里
+    return { ...toRefs(data) }
+  },
+})
+```
+
+#### 3.2.2 计算属性与监听器
+
+- 计算属性:
+  - 示例：`var num_2 = computed(() => num.value * 2)`
+  - 响应式对象的值, 用value读取
+- 监听器：
+  - 示例：`watch(num, (to, from) => {...}`
+  - 参数1: 要监听的属性，参数2: 回调函数, to新值  from旧值
+
+```vue
+<template>
+  <div>
+    <button @click="num++">{{ num }}</button>
+    <p>num2倍: {{ num_2 }}</p>
+  </div>
+</template>
+
+<script lang="ts">
+import { computed, defineComponent, ref, watch } from 'vue'
+
+export default defineComponent({
+  setup() {
+    var num = ref(10)
+    console.log(num)
+
+    // 计算属性:
+    // 响应式对象的值, 用value读取
+    var num_2 = computed(() => num.value * 2)
+
+    // 参数1: 要监听的属性
+    // 参数2: 回调函数, to新值  from旧值
+    watch(num, (to, from) => {
+      console.log('to:', to)
+      console.log('from:', from)
+    })
+
+    return { num, num_2 }
+  },
+})
+</script>
+
+<style scoped></style>
+
+```
+
+#### 3.2.3 axios
+
+- vue3没有过滤器语法, 使用函数写法转换数据
+- vue3中没有 this 关键词, 因为vue3没有全局的东西
+- axios 只能局部使用, 先安装 npm i axios
+
+```vue
+<template>
+  <div v-if="data">
+    <div>页数: {{ data.pageNum }}</div>
+    <div class="cell" v-for="x in data.data" :key="x.nid">
+      <span>{{ x.title }}</span>
+      <!-- vue3没有过滤器语法, 使用函数写法转换数据 -->
+      <span>{{ date(x.pubTime) }}</span>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+// vue3中没有 this 关键词, 因为vue3没有全局的东西
+// axios 只能局部使用, 先安装 npm i axios
+import axios from 'axios'
+
+import { defineComponent, onMounted, ref } from 'vue'
+
+export default defineComponent({
+  setup() {
+    var data = ref(null)
+
+    // 生命周期
+    onMounted(() => {
+      const url = `http://www.codeboy.com:9999/mfresh/data/news_select.php`
+
+      axios.get(url).then(res => {
+        console.log(res)
+        //值保存到本地
+        data.value = res.data
+        console.log(data)
+      })
+    })
+
+    // vue3没有过滤器语法, 用函数代替
+    function date(value: string) {
+      // TS语言不支持隐式类型转换, 必须手动转换
+      var d = new Date(parseInt(value))
+      var year = d.getFullYear()
+      var month = d.getMonth() + 1
+      var day = d.getDate()
+      return `${year}/${month}/${day}`
+    }
+    // 凡是在页面上使用的, 都要放return
+    return { data, date }
+  },
+})
+</script>
+
+<style scoped lang="scss">
+.cell {
+  display: flex;
+  width: 700px;
+  padding: 10px;
+  border-bottom: 1px dashed gray;
+  justify-content: space-between;
+}
+</style>
+```
+
+#### 3.2.3 路由系统
+
+- `router-link`跳转：与vue2相同
+- 编程式跳转：
+  - 引入路由
+  - `import { useRouter } from 'vue-router'`
+  - `const $router = useRouter()`
+  - 创建跳转函数
+  - `var methods={跳转方法}`
+  - 返回函数
+  - `return {...methods}`
+
+```vue
+<template>
+  <div>
+    <router-link to="/">首页</router-link>
+    <router-link to="/about">关于</router-link>
+    <hr />
+    <button @click="goHome">首页</button>
+
+    <button @click="goAbout">关于</button>
+    <!-- 路由系统的占位符 -->
+    <router-view />
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { useRouter } from 'vue-router'
+
+export default defineComponent({
+  setup() {
+    console.log('this', this)
+    // 第三方的模块, 必须用 use 来引入
+    const $router = useRouter()
+
+    var methods = {
+      goAbout() {
+        $router.push('/about')
+      },
+      goHome() {
+        $router.push('/')
+      },
+    }
+
+    return { ...methods }
+
+    // 方法的添加方案1: 1个1个写, 1个1个添加 -- 麻烦
+    // function goAbout() {}
+    // function goHome() {}
+    // function add() {}
+    // return { goAbout, goHome, add }
+  },
+})
+</script>
+
+<style scoped lang="scss">
+a {
+  display: inline-block;
+  padding: 10px 30px;
+  background-color: #eee;
+  color: black;
+  text-decoration: none;
+
+  // 自带高亮样式
+  &.router-link-exact-active {
+    background-color: orange;
+    color: white;
+  }
+}
+</style>
+
+```
+
+#### 3.2.3 组件与vuex
+
+- 组件与vue2写法一致
+- vue2的语法.  vue3兼容
+- vuex
+  - 直接使用： `$store.state.变量`
+  - vue3 不支持辅助函数, 没有mapState，可以使用计算属性
+    - 引入store：`import { useStore } from 'vuex'`
+    - 使用store：`const $store = useStore()`
+    - 计算属性：`words: computed(() => $store.state.words)`
+
+**App.vue**
+
+```vue
+<template>
+<template>
+  <div>
+    <!-- 组件 -- components -->
+    <input type="text" v-model="a" />
+    <p>a:{{ a }}</p>
+    <button @click="$store.commit('updateWords', a)">
+      共享数据
+    </button>
+    <my-header />
+    <my-footer />
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref } from 'vue'
+import MyFooter from './components/MyFooter.vue'
+import MyHeader from './components/MyHeader.vue'
+
+export default defineComponent({
+  components: { MyHeader, MyFooter },
+  setup() {
+    // a 配合双向绑定使用
+    return { a: ref('') }
+  },
+})
+</script>
+
+<style scoped></style>
+```
+
+**Index.js**
+
+```ts
+import { createStore } from 'vuex'
+
+export default createStore({
+  // 共享数据
+  state: {
+    words: '壮壮再见!',
+  },
+  getters: {},
+  mutations: {
+    updateWords(state, words) {
+      state.words = words
+    },
+  },
+  actions: {},
+  modules: {},
+})
+
+```
+
+**Myfooter.vue**
+
+```vue
+<template>
+  <div class="my-footer">
+    <h1>我的脚</h1>
+    <p>{{ words }}</p>
+  </div>
+</template>
+
+<script lang="ts">
+import { computed, defineComponent } from 'vue'
+import { useStore } from 'vuex'
+// import { mapState } from 'vuex'
+
+export default defineComponent({
+  // vue2的语法.  vue3兼容, 所以可以用
+  // computed: { ...mapState(['words']) },
+  setup() {
+    // vue3 不支持辅助函数, 没有mapState
+    // 用 计算属性
+    const $store = useStore() //引入store
+
+    return {
+      // 利用计算属性, 读取words的值, 实际上得到的是 箭头函数的返回值
+      words: computed(() => $store.state.words),
+    }
+  },
+})
+</script>
+
+<style scoped>
+.my-footer {
+  background-color: blue;
+  padding: 40px;
+}
+</style>
+```
 
 
-## 3.Vue实战
+
+## 4.Vue实战
 
