@@ -68,6 +68,7 @@ serve dist
 
 - data：存储使用到的数据, 可以在HTML中使用
   - 数据都是存储在 `vue`对象里
+  - data中存在数组时，索引操作与length操作无法自动更新视图，需要借助`Vue.set()`方法代替。示例：`Vue.set(vm,index,newMessage)`
 - methods： 绑定给元素的方法
   - 方式中的this指向: `当前vue对象`
 - computed：称为计算属性
@@ -110,49 +111,66 @@ serve dist
 指令: 就是vue提供的一些特殊的属性, 都是`v-`开头
 
 - `v-show`: 
-  - 显示还是隐藏, 利用css display:none -- 适合频繁切换隐藏的场景。
+  - 显示还是隐藏-- 适合频繁切换隐藏的场景。
+  - 底层利用css display:none 实现，因此template不能用v-show
   - `<p v-show="true"></p>`
-
 - `v-if`: 
   - 移除/添加元素，适合不频繁的, 特别是一次性的隐藏/显示。
-  - `<p v-if="true"></p>`，v-else-if,v-else同理
-
+  - `<p v-if="true"></p>`
+  - `v-else-if`,`v-else`同理
+  - 当v-if,v-else-if,v-else内部标签相同时，需要用key指定唯一性，避免出现问题，例如相同input标签内用户输入的值重新渲染时不变
+  - v-if与v-for应用于同一标签时，v-for的优先级高于v-if。出于性能考虑，应避免将v-if与v-for应用于同一标签。可将v-if放于父级标签中。
 - `v-once`: 
-  - 一次性渲染, 后续不更新。
+  - 使插值表达式只生效一次, 后续不更新。
   - `<p v-once></p>`
-
 - `v-pre`: 
   - 原样输出 `{{}}`。
   - `<p v-pre></p>`
-
 - `v-text/v-html`:  
   - 对应 innerText 和 innerHTML，替换原内容。
   - `<p v-text="kw">111</p>`
-
 - `v-for`: 
   - 遍历数组 生成元素
-  - 语法有3种
+  - 语法:
     - v-for="值 in/of 数组"
-    - v-for="(值,序号) in/of 数组"
+    - v-for="(值,索引) in/of 数组"
+    - v-for="(值,键,索引) in 对象"
     - v-for="值 in/of 数字"
-  - key: 给生成的元素添加唯一标识
-    - 用途:当`数组有变化`时, 提升元素重用的效率;   如果数组不变则没用
-
+    - v-for="(值,索引) in/of 数字"
+  - `:key`
+    -  给生成的元素添加唯一标识，提高渲染性能并避免问题
+    - 用途:当`数组有变化`时, 提升元素重用的效率;  
+    - 不推荐使用索引，因为数组变化时索引也变化，不是唯一值
+    - 当元素不重复时，可将元素作为key，当元素可能重复时，可给每个元素设置id
+  - `<template>`
+    - 模板占位符，可以将部分元素或内容作为整体进行操作
+    - 模板占位符不需要设置key ，key只能设置在真实的元素上
 - `v-on`: 
   - 事件绑定语法 .   原生事件 onclick
   - vue2中提供了语法糖:    `@事件名=""`
-
 - `v-bind`:
   - 属性绑定语法
   - vue2中提供语法糖： `:属性名=""`
-
+  - 允许使用表达式
+  - 如果需要一次绑定多个属性，还可以绑定对象`v-bind="obj"`
+  - `:class`
+    - :class可以跟class并存
+    - 多个动态class:`：class="{cls1:true,cls2:false,cls3:true}"`
+    - 固定与动态并存：`：class="[cls1,{cls2:false},cls3]"`
+  - `:style`
+    - :style可以与style共存
+    - 多个动态style:`:style="{width:'100px',height:'200px'}"`
+    - 数组写法：`:style="[styleObj1,styleObj2]"`
 - `v-model`:
-  - 双向绑定
+  - 双向绑定（input,textarea,select...）,实时变化绑定的数据
   - 会自动判断所在的元素类型, 然后为对应的属性绑定值
   - `v-model="变量"`
   - 表单元素: 输入框, 单选框, 多选框, 下拉选框.. 用户能操作修改值
-  - 作用: 实时变化绑定的数据
-
+    - input：绑定value,字符串值
+    - textarea：绑定value,字符串值
+    - radio：绑定value,字符串值
+    - checkbox：单个:布尔值，多个:value，数组
+    - select：单个:value,字符串，多个:value,数组
 - `v-slot`: 
   - 插槽
   - 组件负责布局操作, 使用插槽作为占位符使用
@@ -163,8 +181,105 @@ serve dist
     - v-slot:名字   - vue2
     - #名字  - vue2语法的语法糖
 
-- 
+#### 2.2.2 修饰符
 
+- 事件修饰符
+  - `.prevent`
+    - 阻止默认事件行为，相当于`event.preventDefault()`
+    - 示例：`@click.prevent`，阻止默认行为
+    - 示例：`@click.prevent="fn"`，阻止默认行为并执行fn
+  - `.stop`
+    - 阻止事件传播，相当于`event.stopPropagation()`
+    - 冒泡：当上级元素与子元素拥有相同事件时，触发子元素事件后，上级元素的事件也会触发
+    - 示例：`@click.stop="fn"`
+    - 多个修饰符可以同时使用：`@click.prevent.stop="fn"`
+  - `.once`
+    - 用于设置事件只触发一次
+    - 示例：`@click.once="fn"`
+  - ...
+- 按键修饰符
+  - 按键码
+    - 将按键的按键码作为修饰符标识按键
+    - 示例：`@keyup.49="fn"`，49为按键1的按键码，当按键1弹起时，触发fn
+    - 示例：`@keyup.a="fn"`，当按键a弹起时，触发fn
+  - 特殊按键
+    - esc/enter/delete/tab/space....
+    - 不同浏览器下特殊按键的keycode可能不一致，因此可以直接使用`@keyup.enter="fn"`
+  - 连写
+    - `@keyup.a.b.c="fn"`，按下a/b/c任意一个即可触发fn
+- 系统修饰符
+  - 系统按键指的时ctrl/alt/shift等
+  - 系统按键通常与其他按键组合使用
+  - `.ctrl`/`.alt`/`.shift`
+    - 单独使用.ctrl不生效
+    - 示例：`@keyup.17.q="fn"`，17是左ctrl的keycode,该代码表示点击左`ctrl或q`时，触发fn
+    - 示例：`@keyup.ctrl.q="fn"`,该代码表示点击`ctrl和q`时，触发fn
+  - `.meta`：windows中代表win，mac中代表command
+  - `.exact`
+    - 精准配置
+    - 示例：`@keyup.ctrl.exact="fn"`,该代码表示点击ctrl，触发fn
+- 鼠标修饰符
+  - `.left`/`.right`/`.middle`
+    - 示例：`@click.right="fn"`，右键点击触发fn
+- v-model修饰符
+  - `.trim`
+    - 过滤用户输入内容首尾两端的空格
+    - 示例：`v-model.trim="value"`
+  - `.lazy`
+    - 用于将v-model的触发方式由input事件触发更改为change事件触发
+    - 示例：`v-model.lazy="value"`，当失去焦点时，才会触发双向绑定
+  - `.number`
+    - 用户输入的值均为字符串
+    - 将用户输入的值转为数值类型，如无法被parseFloat()转换，则返回原始值
+    - 示例：`v-model.number="value"`
+
+#### 2.2.3 自定义指令
+
+（1）自定义全局指令
+
+- 指在所有Vue实例中均可使用的自定义指令
+
+```js
+//可以在所有Vue实例中使用
+Vue.directive('focus',{
+	inserted:function(el,binding){
+    console.log(binding)；//binding中存储了修饰符，值等内容
+		el.focus();
+	}
+})
+```
+
+```vue
+<input v-focus type="text">
+```
+
+（2）自定义局部指令
+
+- 指在当前Vue实例或者组件中使用的自定义指令
+
+```js
+//只能在id="app"的Vue实例中使用
+new Vue({
+  el:'#app',
+  directives:{
+    focus:{
+      inserted(el){
+        el.focus();
+      }
+    }
+  }
+})
+```
+
+（3）钩子函数
+
+一个指令定义对象可以提供以下几个钩子函数：
+
+- `bind`：只调用一次，指令第一次绑定到元素时调用
+- `inserted`：被绑定元素插入父节点时调用
+- `update`：所在组件的VNode更新时调用
+- `componentUpdate`：指令所在组件的VNode及其子VNode全部更新后调用
+- `unbind`：只调用一次，指令与元素解绑时调用
 
 #### 2.2.2 属性与事件
 
