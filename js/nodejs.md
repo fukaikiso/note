@@ -1050,3 +1050,128 @@ router.put('/update',(req,res,next)=>{
 module.exports = router
 })
 ```
+
+## 跨域
+
+```js
+const express = require('express')
+
+const app = express()
+app.listen(3000, ()=>{
+  console.log('服务器开启成功!');
+})
+
+app.use(express.static('public'))
+
+// 在所有的接口前, 添加一个拦截器 -- 中间件
+// 理解成: 小区卡口, 来访人员必须扫码登记 才能通过
+// all: 全部; 所有类型的请求, 例如 get post 等
+// * : 通配符, 匹配所有的接口地址
+// 即: 所有的请求,所有的接口 都会进入当前拦截器
+app.all('*', (req, res, next)=>{
+  // 响应头中,添加一个设置:
+  // (允许来自特殊指定来源的访问, '具体地址')
+  // res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:3000')
+  // 利用 * 可以统配所有来源的访问
+  res.header('Access-Control-Allow-Origin', '*')
+  
+  // 那允许某几个访问怎么办?  需要第三方模块 cors 才能实现
+  // -- 下回分解!
+
+  // 下一步:  拦截器放行;   相当于扫码完毕 可以进入办公楼
+  next()
+})
+
+
+app.get('/zz_info', (req, res)=>{
+  const data = {
+    name:"...",
+    nickname:"...",
+    skills:['...', '...', '...'],
+    hobby:'...',
+    photo:'Galio.png'
+  }
+  // 发送给用户   response:响应
+  res.send(data)
+})
+```
+
+## cors模块
+
+```js
+const express = require('express')
+// 安装cors模块: npm i cors    在my-server目录下执行
+const cors = require('cors')
+
+const app = express()
+
+//NOTE:设置本地计算机ip作为host
+//app.set('host', 'http://192.168.1.24');
+
+app.listen(3000, ()=>{
+  console.log('服务器开启成功!');
+})
+
+app.use(express.static('public'))
+
+// 在所有接口前书写:
+// app.use(cors())  //解决跨域: 允许所有来源
+
+// 白名单: 指定某几个
+app.use(cors({
+  // 把允许的域名放在数组里即可
+  origin:['http://127.0.0.1:3000', 'http://127.0.0.1:5500']
+}))
+
+
+app.get('/zz_info', (req, res)=>{
+  const data = {
+    name:"...",
+    nickname:"...",
+    skills:['...', '...', '...'],
+    hobby:'...',
+    photo:'Galio.png'
+  }
+  // 发送给用户   response:响应
+  res.send(data)
+})
+```
+
+## 制作服务器
+
+- 创建文件夹 `my-server`
+- 在`my-server`下执行: `npm init -y` 初始化
+- 再执行: `npm i express` 安装express模块
+- 再执行: `npm i cors` 安装跨域模块
+- 再执行: `npm i express-http-proxy`  代理模块
+
+## 代理
+
+```js
+const express = require('express')
+// 跨域
+const cors = require('cors')
+// 代理
+const proxy = require('express-http-proxy')
+
+const app = express()
+
+// 启动代理服务器:  nodemon app.js  或 node app.js
+app.listen(3000, ()=>{ 
+  console.log('服务器启动完毕!');
+})
+
+app.use(cors())
+
+// 代理负责转发请求, 必须放在跨域 下方书写
+// 所有访问 /dy 接口的请求, 都进行转发
+// 即 localhost:3000/dy 
+app.use('/xyz', proxy('http://dy.xin88.top'))
+
+//http://localhost:3000/xz/data/product/index.php
+app.use('/xz', proxy('http://www.codeboy.com:9999'))
+
+// 范式:
+// app.use('接口地址', proxy(要代理到的网站))
+```
+

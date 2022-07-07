@@ -115,7 +115,7 @@
 |audio|定义声音，比如音乐或其他音频流|autoplay;controls;loop;muted;preload;src|new|
 |source|媒体元素定义媒体资源|media;src;type;srcset|new|
 |track|规定外部文本轨道，也就是字幕|default;kind;label;src;srclang|new|
-|video|定义视频|autoplay;controls;loop;muted;preload;src;height;poster;width|new|
+|video|定义视频|autoplay;controls;loop;muted;<br>preload;src;height;poster;width|new|
 
 **链接**
 

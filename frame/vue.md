@@ -59,28 +59,101 @@ serve dist
 
 `new Vue()`: 创建时有固定的初始化`配置项`：
 
-**DOM**
+#### 2.1.1 DOM
 
 - el : 初始化vue对象时, 设定vue对象管理的元素, 值 id选择器
 - render(渲染): 手架中使用, `main.js`文件. 用于加载 `.vue` 文件到 vue对象里
 
-**数据**
+#### 2.1.2 数据
 
 - data：存储使用到的数据, 可以在HTML中使用
+  
+  - `data(){}`
   - 数据都是存储在 `vue`对象里
   - data中存在数组时，索引操作与length操作无法自动更新视图，需要借助`Vue.set()`方法代替。示例：`Vue.set(vm,index,newMessage)`
+  - `data是个函数, 为什么是函数?`
+  
+     `因为: 组件在复用时, 会调用此函数临时生成一个新的对象`
+  
+     `所以: 每个组件中的 数据都是不同的对象. 因为各生各的`
+  
 - methods： 绑定给元素的方法
-  - 方式中的this指向: `当前vue对象`
-- computed：称为计算属性
-  - 存放在这里的函数, 使用时不用(), 会自动触发. 
-  - 适合没有参数的函数
-- props：外来的属性
-  - 理解成 组件的形参, 接收组件使用时传入的实参
-- - 
-- watch：监听器，监听一个属性的变化
-  - 配置：`func(to,from){...}`
 
-**资源**
+  - `methods:{}`
+  - 方式中的this指向: `当前vue对象`
+
+- computed：称为计算属性
+
+  - `computed:{}`
+  - 配置：`function(){return ...}`
+  - Vue.js的视图不建议书写复杂逻辑，这样不利于维护
+  - 计算属性使用时为属性形式，访问时会自动执行对应的函数。存放在这里的函数, 使用时不用(), 会自动触发. 
+  - 具有缓存性，计算后可以存储结果，可以减少函数运行次数，提高效率
+  - 仅适用于计算操作
+
+```js
+//普通写法
+new Vue({
+  data:{
+    a:1,
+    b:2
+  }
+  computed:{
+    fullName(){
+      return this.a + this.b
+    }
+  }
+})
+//getter与setter分开写法
+new Vue({
+  data:{
+    a:1,
+    b:2
+  }
+  computed:{
+    fullName(){
+  		get(){
+        return this.a + this.b
+      },
+      set(newValue){
+        ....
+      }
+    }
+  }
+})
+```
+
+- props：外来的属性
+
+  - `props:{}`
+  - 理解成 组件的形参, 接收组件使用时传入的实参
+  - 父子传参：`props:{[....]}`
+  - 精确配置：`props:{kw:{default: 1}} `...
+
+- watch：监听器，监听一个属性的变化
+
+  - `watch:{}`
+  - 配置：`func(newValue,oldValue){...}`
+  - 注意：对数组进行监听时，监听不到数组的索引与length操作
+
+```js
+//watch 无法直接监听对象内部属性的修改
+//为了监听对象内部的变化，需要将watch书写为对象，并设置deep:true
+new Vue({
+  watch:{
+    obj:{
+      deep:true,
+      //直接修改对象内部属性，对象本身并不变，所以new和old指向同一个对象
+      handler(newValue){
+        ....
+      }
+    }
+  }
+})
+```
+
+
+#### 2.1.3 资源
 
 - directives：指令
   - 自定义指令都是 `v-` 开头
@@ -96,192 +169,11 @@ serve dist
   - 使用：`{{ 值 | 过滤器 }}`
   - 配置：`func(值){...}`，返回值就是过滤后的结果
 
-**生命周期**
+#### 2.1.4 生命周期【...】
 
 - 
 
-**注意**：
-
-- 图片在JS中使用, 必须用 require 方法引入, 否则无法加载
-
-### 2.2 vue语法
-
-#### 2.2.1 vue指令
-
-指令: 就是vue提供的一些特殊的属性, 都是`v-`开头
-
-- `v-show`: 
-  - 显示还是隐藏-- 适合频繁切换隐藏的场景。
-  - 底层利用css display:none 实现，因此template不能用v-show
-  - `<p v-show="true"></p>`
-- `v-if`: 
-  - 移除/添加元素，适合不频繁的, 特别是一次性的隐藏/显示。
-  - `<p v-if="true"></p>`
-  - `v-else-if`,`v-else`同理
-  - 当v-if,v-else-if,v-else内部标签相同时，需要用key指定唯一性，避免出现问题，例如相同input标签内用户输入的值重新渲染时不变
-  - v-if与v-for应用于同一标签时，v-for的优先级高于v-if。出于性能考虑，应避免将v-if与v-for应用于同一标签。可将v-if放于父级标签中。
-- `v-once`: 
-  - 使插值表达式只生效一次, 后续不更新。
-  - `<p v-once></p>`
-- `v-pre`: 
-  - 原样输出 `{{}}`。
-  - `<p v-pre></p>`
-- `v-text/v-html`:  
-  - 对应 innerText 和 innerHTML，替换原内容。
-  - `<p v-text="kw">111</p>`
-- `v-for`: 
-  - 遍历数组 生成元素
-  - 语法:
-    - v-for="值 in/of 数组"
-    - v-for="(值,索引) in/of 数组"
-    - v-for="(值,键,索引) in 对象"
-    - v-for="值 in/of 数字"
-    - v-for="(值,索引) in/of 数字"
-  - `:key`
-    -  给生成的元素添加唯一标识，提高渲染性能并避免问题
-    - 用途:当`数组有变化`时, 提升元素重用的效率;  
-    - 不推荐使用索引，因为数组变化时索引也变化，不是唯一值
-    - 当元素不重复时，可将元素作为key，当元素可能重复时，可给每个元素设置id
-  - `<template>`
-    - 模板占位符，可以将部分元素或内容作为整体进行操作
-    - 模板占位符不需要设置key ，key只能设置在真实的元素上
-- `v-on`: 
-  - 事件绑定语法 .   原生事件 onclick
-  - vue2中提供了语法糖:    `@事件名=""`
-- `v-bind`:
-  - 属性绑定语法
-  - vue2中提供语法糖： `:属性名=""`
-  - 允许使用表达式
-  - 如果需要一次绑定多个属性，还可以绑定对象`v-bind="obj"`
-  - `:class`
-    - :class可以跟class并存
-    - 多个动态class:`：class="{cls1:true,cls2:false,cls3:true}"`
-    - 固定与动态并存：`：class="[cls1,{cls2:false},cls3]"`
-  - `:style`
-    - :style可以与style共存
-    - 多个动态style:`:style="{width:'100px',height:'200px'}"`
-    - 数组写法：`:style="[styleObj1,styleObj2]"`
-- `v-model`:
-  - 双向绑定（input,textarea,select...）,实时变化绑定的数据
-  - 会自动判断所在的元素类型, 然后为对应的属性绑定值
-  - `v-model="变量"`
-  - 表单元素: 输入框, 单选框, 多选框, 下拉选框.. 用户能操作修改值
-    - input：绑定value,字符串值
-    - textarea：绑定value,字符串值
-    - radio：绑定value,字符串值
-    - checkbox：单个:布尔值，多个:value，数组
-    - select：单个:value,字符串，多个:value,数组
-- `v-slot`: 
-  - 插槽
-  - 组件负责布局操作, 使用插槽作为占位符使用
-  - 组件在使用时, 其双标签写法中的内容, 会替换掉插槽
-  - 命名插槽: `<slot name='名字'/>`
-    - 使用时有3种语法
-    - slot='名字'   - vue1
-    - v-slot:名字   - vue2
-    - #名字  - vue2语法的语法糖
-
-#### 2.2.2 修饰符
-
-- 事件修饰符
-  - `.prevent`
-    - 阻止默认事件行为，相当于`event.preventDefault()`
-    - 示例：`@click.prevent`，阻止默认行为
-    - 示例：`@click.prevent="fn"`，阻止默认行为并执行fn
-  - `.stop`
-    - 阻止事件传播，相当于`event.stopPropagation()`
-    - 冒泡：当上级元素与子元素拥有相同事件时，触发子元素事件后，上级元素的事件也会触发
-    - 示例：`@click.stop="fn"`
-    - 多个修饰符可以同时使用：`@click.prevent.stop="fn"`
-  - `.once`
-    - 用于设置事件只触发一次
-    - 示例：`@click.once="fn"`
-  - ...
-- 按键修饰符
-  - 按键码
-    - 将按键的按键码作为修饰符标识按键
-    - 示例：`@keyup.49="fn"`，49为按键1的按键码，当按键1弹起时，触发fn
-    - 示例：`@keyup.a="fn"`，当按键a弹起时，触发fn
-  - 特殊按键
-    - esc/enter/delete/tab/space....
-    - 不同浏览器下特殊按键的keycode可能不一致，因此可以直接使用`@keyup.enter="fn"`
-  - 连写
-    - `@keyup.a.b.c="fn"`，按下a/b/c任意一个即可触发fn
-- 系统修饰符
-  - 系统按键指的时ctrl/alt/shift等
-  - 系统按键通常与其他按键组合使用
-  - `.ctrl`/`.alt`/`.shift`
-    - 单独使用.ctrl不生效
-    - 示例：`@keyup.17.q="fn"`，17是左ctrl的keycode,该代码表示点击左`ctrl或q`时，触发fn
-    - 示例：`@keyup.ctrl.q="fn"`,该代码表示点击`ctrl和q`时，触发fn
-  - `.meta`：windows中代表win，mac中代表command
-  - `.exact`
-    - 精准配置
-    - 示例：`@keyup.ctrl.exact="fn"`,该代码表示点击ctrl，触发fn
-- 鼠标修饰符
-  - `.left`/`.right`/`.middle`
-    - 示例：`@click.right="fn"`，右键点击触发fn
-- v-model修饰符
-  - `.trim`
-    - 过滤用户输入内容首尾两端的空格
-    - 示例：`v-model.trim="value"`
-  - `.lazy`
-    - 用于将v-model的触发方式由input事件触发更改为change事件触发
-    - 示例：`v-model.lazy="value"`，当失去焦点时，才会触发双向绑定
-  - `.number`
-    - 用户输入的值均为字符串
-    - 将用户输入的值转为数值类型，如无法被parseFloat()转换，则返回原始值
-    - 示例：`v-model.number="value"`
-
-#### 2.2.3 自定义指令
-
-（1）自定义全局指令
-
-- 指在所有Vue实例中均可使用的自定义指令
-
-```js
-//可以在所有Vue实例中使用
-Vue.directive('focus',{
-	inserted:function(el,binding){
-    console.log(binding)；//binding中存储了修饰符，值等内容
-		el.focus();
-	}
-})
-```
-
-```vue
-<input v-focus type="text">
-```
-
-（2）自定义局部指令
-
-- 指在当前Vue实例或者组件中使用的自定义指令
-
-```js
-//只能在id="app"的Vue实例中使用
-new Vue({
-  el:'#app',
-  directives:{
-    focus:{
-      inserted(el){
-        el.focus();
-      }
-    }
-  }
-})
-```
-
-（3）钩子函数
-
-一个指令定义对象可以提供以下几个钩子函数：
-
-- `bind`：只调用一次，指令第一次绑定到元素时调用
-- `inserted`：被绑定元素插入父节点时调用
-- `update`：所在组件的VNode更新时调用
-- `componentUpdate`：指令所在组件的VNode及其子VNode全部更新后调用
-- `unbind`：只调用一次，指令与元素解绑时调用
-
-#### 2.2.2 属性与事件
+#### 2.1.5 事件与特殊属性
 
   - 在HTML中提供了新的语法, 代表DOM操作
 
@@ -309,15 +201,7 @@ new Vue({
 
 ![image-20220620221211288](vue.assets/image-20220620221211288.png)
 
-**常用动态属性**
 
-- class
-  - :class="{类: true/false}"  真生效 假不生效
-- style
-  - :style="{属性名: 值}"
-  - 注意属性名带 `_`  需要小驼峰 或 字符串
-
-- - 
 
 **特殊属性**
 
@@ -329,7 +213,281 @@ new Vue({
   - :key="唯一标识"
   - key为元素添加唯一标识，在数组内容发生修改的时候, 可以提高性能, 直接复用元素 
 
-#### 2.2.3网络请求
+#### 2.1.6 注意事项
+
+- 图片在JS中使用, 必须用 require 方法引入, 否则无法加载
+
+### 2.2 vue指令
+
+指令: 就是vue提供的一些特殊的属性, 都是`v-`开头
+
+#### 2.2.1 v-show
+
+- 显示还是隐藏-- 适合频繁切换隐藏的场景。
+- 底层利用css display:none 实现，因此template不能用v-show
+- `<p v-show="true"></p>`
+
+#### 2.2.2 v-if
+
+- 移除/添加元素，适合不频繁的, 特别是一次性的隐藏/显示。
+- `<p v-if="true"></p>`
+- `v-else-if`,`v-else`同理
+- 当v-if,v-else-if,v-else内部标签相同时，需要用key指定唯一性，避免出现问题，例如相同input标签内用户输入的值重新渲染时不变
+- v-if与v-for应用于同一标签时，v-for的优先级高于v-if。出于性能考虑，应避免将v-if与v-for应用于同一标签。可将v-if放于父级标签中。
+
+#### 2.2.4 v-once 
+
+- 使插值表达式只生效一次, 后续不更新。
+- `<p v-once></p>`
+
+#### 2.2.5 v-pre
+
+- 原样输出 `{{}}`。
+- `<p v-pre></p>`
+
+#### 2.2.6 v-text/v-html
+
+- 对应 innerText 和 innerHTML，替换原内容。
+- `<p v-text="kw">111</p>`
+
+#### 2.2.7 v-for
+
+- 遍历数组 生成元素
+- 语法:
+  - v-for="值 in/of 数组"
+  - v-for="(值,索引) in/of 数组"
+  - v-for="(值,键,索引) in 对象"
+  - v-for="值 in/of 数字"
+  - v-for="(值,索引) in/of 数字"
+- `:key`
+  -  给生成的元素添加唯一标识，提高渲染性能并避免问题
+  - 用途:当`数组有变化`时, 提升元素重用的效率;  
+  - 不推荐使用索引，因为数组变化时索引也变化，不是唯一值
+  - 当元素不重复时，可将元素作为key，当元素可能重复时，可给每个元素设置id
+- `<template>`
+  - 模板占位符，可以将部分元素或内容作为整体进行操作
+  - 模板占位符不需要设置key ，key只能设置在真实的元素上
+
+#### 2.2.5 v-on
+
+- 事件绑定语法 .   原生事件 onclick
+- vue2中提供了语法糖:    `@事件名=""`
+
+#### 2.2.6 v-bind
+
+- 属性绑定语法
+- vue2中提供语法糖： `:属性名=""`
+- 允许使用表达式
+- 如果需要一次绑定多个属性，还可以绑定对象`v-bind="obj"`
+- `:class`
+  - :class可以跟class并存
+  - 多个动态class:`：class="{cls1:true,cls2:false,cls3:true}"`
+  - 固定与动态并存：`：class="[cls1,{cls2:false},cls3]"`
+- `:style`
+  - :style可以与style共存
+  - 多个动态style:`:style="{width:'100px',height:'200px'}"`
+  - 数组写法：`:style="[styleObj1,styleObj2]"`
+  - 注意属性名带 `_`  需要小驼峰 或 字符串
+
+#### 2.2.7 v-model
+
+- 双向绑定（input,textarea,select...）,实时变化绑定的数据
+- 会自动判断所在的元素类型, 然后为对应的属性绑定值
+- `v-model="变量"`
+- 表单元素: 输入框, 单选框, 多选框, 下拉选框.. 用户能操作修改值
+  - input：绑定value,字符串值
+  - textarea：绑定value,字符串值
+  - radio：绑定value,字符串值
+  - checkbox：单个:布尔值，多个:value，数组
+  - select：单个:value,字符串，多个:value,数组
+
+#### 2.2.8 v-slot
+
+- 插槽
+- 组件负责布局操作, 使用插槽作为占位符使用
+- 组件在使用时, 其双标签写法中的内容, 会替换掉插槽
+- 命名插槽: `<slot name='名字'/>`
+  - 使用时有3种语法
+  - slot='名字'   - vue1
+  - v-slot:名字   - vue2
+  - #名字  - vue2语法的语法糖
+
+### 2.3 修饰符
+
+#### 2.3.1 [事件修饰符](https://cn.vuejs.org/v2/guide/events.html#%E4%BA%8B%E4%BB%B6%E4%BF%AE%E9%A5%B0%E7%AC%A6)
+
+- `.prevent`
+  - 阻止默认事件行为，相当于`event.preventDefault()`
+  - 示例：`@click.prevent`，阻止默认行为
+  - 示例：`@click.prevent="fn"`，阻止默认行为并执行fn
+- `.stop`
+  - 阻止事件传播，相当于`event.stopPropagation()`
+  - 冒泡：当上级元素与子元素拥有相同事件时，触发子元素事件后，上级元素的事件也会触发
+  - 示例：`@click.stop="fn"`
+  - 多个修饰符可以同时使用：`@click.prevent.stop="fn"`
+- `.once`
+  - 用于设置事件只触发一次
+  - 示例：`@click.once="fn"`
+- `.native`
+  - 为自定义组件绑定原生事件`必须`使用`.native`修饰符
+  - 示例：`<my-component @click.native="handleClick">Click Me</my-component>`
+- `.capture`
+  - 添加事件监听器时使用事件捕获模式，即内部元素触发的事件先在此处理，然后才交由内部元素进行处理
+  - 示例：`<div v-on:click.capture="doThis">...</div>`
+- ...
+
+#### 2.3.2 [按键修饰符](https://cn.vuejs.org/v2/guide/events.html#%E6%8C%89%E9%94%AE%E4%BF%AE%E9%A5%B0%E7%AC%A6)
+
+- 按键码
+  - 将按键的按键码作为修饰符标识按键
+  - 示例：`@keyup.49="fn"`，49为按键1的按键码，当按键1弹起时，触发fn
+  - 示例：`@keyup.a="fn"`，当按键a弹起时，触发fn
+- 特殊按键
+  - esc/enter/delete/tab/space....
+  - 不同浏览器下特殊按键的keycode可能不一致，因此可以直接使用`@keyup.enter="fn"`
+- 连写
+  - `@keyup.a.b.c="fn"`，按下a/b/c任意一个即可触发fn
+
+#### 2.3.3 [系统修饰符](https://cn.vuejs.org/v2/guide/events.html#%E7%B3%BB%E7%BB%9F%E4%BF%AE%E9%A5%B0%E9%94%AE)
+
+- 系统按键指的时ctrl/alt/shift等
+- 系统按键通常与其他按键组合使用
+- `.ctrl`/`.alt`/`.shift`
+  - 单独使用.ctrl不生效
+  - 示例：`@keyup.17.q="fn"`，17是左ctrl的keycode,该代码表示点击左`ctrl或q`时，触发fn
+  - 示例：`@keyup.ctrl.q="fn"`,该代码表示点击`ctrl和q`时，触发fn
+- `.meta`：windows中代表win，mac中代表command
+- `.exact`
+  - 精准配置
+  - 示例：`@keyup.ctrl.exact="fn"`,该代码表示点击ctrl，触发fn
+
+#### 2.3.4 [鼠标修饰符](https://cn.vuejs.org/v2/guide/events.html#%E9%BC%A0%E6%A0%87%E6%8C%89%E9%92%AE%E4%BF%AE%E9%A5%B0%E7%AC%A6)
+
+- `.left`/`.right`/`.middle`
+  - 示例：`@click.right="fn"`，右键点击触发fn
+
+- v-model[修饰符](https://cn.vuejs.org/v2/guide/forms.html#%E4%BF%AE%E9%A5%B0%E7%AC%A6)
+  - `.trim`
+    - 过滤用户输入内容首尾两端的空格
+    - 示例：`v-model.trim="value"`
+  - `.lazy`
+    - 用于将v-model的触发方式由input事件触发更改为change事件触发
+    - 示例：`v-model.lazy="value"`，当失去焦点时，才会触发双向绑定
+  - `.number`
+    - 用户输入的值均为字符串
+    - 将用户输入的值转为数值类型，如无法被parseFloat()转换，则返回原始值
+    - 示例：`v-model.number="value"`
+
+### 2.4 自定义指令
+
+指令作用：简化dom操作
+
+#### 2.4.1 自定义全局指令
+
+- 指在所有Vue实例中均可使用的自定义指令
+
+```js
+//可以在所有Vue实例中使用
+Vue.directive('focus',{
+	inserted:function(el,binding){
+    console.log(binding)；//binding中存储了修饰符，值等内容
+		el.focus();
+	}
+})
+```
+
+```vue
+<input v-focus type="text">
+```
+
+#### 2.4.2 自定义局部指令
+
+- 指在当前Vue实例或者组件中使用的自定义指令
+
+```js
+//只能在id="app"的Vue实例中使用
+new Vue({
+  el:'#app',
+  directives:{
+    focus:{
+      inserted(el){
+        el.focus();
+      }
+    }
+  }
+})
+```
+
+（3）钩子函数
+
+一个指令定义对象可以提供以下几个钩子函数：
+
+- `bind`：只调用一次，指令第一次绑定到元素时调用
+- `inserted`：被绑定元素插入父节点时调用
+- `update`：所在组件的VNode更新时调用
+- `componentUpdate`：指令所在组件的VNode及其子VNode全部更新后调用
+- `unbind`：只调用一次，指令与元素解绑时调用
+
+指令钩子函数会被传入以下参数：
+
+- `el`：指令所绑定的元素，可以用来直接操作 DOM。
+
+- `binding` ：一个对象，包含以下 property：
+
+    - `name`：指令名，不包括 `v-` 前缀。
+
+    - `value`：指令的绑定值，例如：`v-my-directive="1 + 1"` 中，绑定值为 `2`。
+
+    - `oldValue`：指令绑定的前一个值，仅在 `update` 和 `componentUpdated` 钩子中可用。无论值是否改变都可用。
+
+    - `expression`：字符串形式的指令表达式。例如 `v-my-directive="1 + 1"` 中，表达式为 `"1 + 1"`。
+      - `arg`：传给指令的参数，可选。例如 `v-my-directive:foo` 中，参数为 `"foo"`。
+
+      - `modifiers`：一个包含修饰符的对象。例如：`v-my-directive.foo.bar` 中，修饰符对象为 `{ foo: true, bar: true }`。
+
+
+- `vnode`：Vue 编译生成的虚拟节点。移步 [VNode API](https://cn.vuejs.org/v2/api/#VNode-接口) 来了解更多详情。
+
+- `oldVnode`：上一个虚拟节点，仅在 `update` 和 `componentUpdated` 钩子中可用。
+
+>  除了 `el` 之外，其它参数都应该是只读的，切勿进行修改。如果需要在钩子之间共享数据，建议通过元素的 [`dataset`](https://developer.mozilla.org/zh-CN/docs/Web/API/HTMLElement/dataset) 来进行。
+
+### 2.5 过滤器
+
+#### 2.5.1 全局过滤器
+
+```js
+Vue.filter('过滤器名称',function(value){
+  return 处理结果
+})
+```
+
+过滤器的使用
+
+- v-bind：`v-bind:id="id | filterName"`
+- 插值表达式：`{{content | filterName}}`
+- 允许多个过滤器同时使用
+  - `{{content | filter1 | filter2}}`
+  - 先通过过滤器1，再通过过滤器2
+- 一个过滤器可以传入多个参数
+  - `{{content | filter(par1,par2)}}`
+  - 参数1：content，参数2：par1，参数3：par2
+
+#### 2.5.2 局部过滤器
+
+```js
+new Vue({
+  filters:{
+    过滤器名称:function(value){
+      return 处理结果
+    }
+  }
+})
+```
+
+
+
+### 2.6 网络请求
 
 - 第三方的axios模块: 需要自己安装 `npm i axios vue-axios`
 - 引入方式分两种
@@ -341,10 +499,13 @@ new Vue({
 - axios的基础路径属性
   - `axios.defaults.baseURL = '...'`
   - 作用: 用axios发的请求, 如果是相对路径 则会自动拼接到这个路径后
-  - 注意: 必须在 use 前设置, 然后再注入到vue里
+  - **`注意`**: 必须在 use 前设置, 然后再注入到vue里
 
 - 使用时, 固定语法
-  - get: `axios.get(地址).then(res=>{})`
+  - get: `axios.get(url).then(res=>{})`
+    - 带参数`url='products/查询字符串'`
+  - post:`axios.post(url,params).then(res=>{})`
+    - `params=查询字符串`
 - 如何展示到页面上
   - `前提设定`:只有存储在配置项data中的属性, 才能在页面上显示
   - 在data中, 声明一个属性
@@ -353,7 +514,7 @@ new Vue({
   - 用v-if判定:data存在再用!
   - template: 虚拟容器, 可以为多个元素统一进行if判断
 
-#### 2.2.4组件
+### 2.7 组件
 
 - 用于拆分大型页面, 拆分成多个独立的`.vue`文件 -- 团队合作, 复杂->简单
 - 存放在 components 目录里
@@ -370,7 +531,7 @@ new Vue({
   - 使用: 单标签 + 双标签 + 大驼峰 + 中划线 写法都支持
     - 推荐:`<xxx-xxx />`
 
-#### 2.2.5 生命周期
+### 2.8 生命周期
 
 - 作用： 配合网络请求用, 实现自动发请求的操作
 - 钩子函数: 在固定事件发生时, 自动触发的函数就叫 钩子函数
@@ -418,14 +579,14 @@ new Vue({
   },
 ```
 
-#### 2.2.6 父子组件传参
+### 2.9 父子组件传参
 
 - App.vue
   - <自定义组件  :需要传的参数="..."  />
 - 自定义组件组件
   - export default中`props: ['参数']`
 
-#### 2.2.7 插槽
+### 2.10 插槽
 
 - App.vue
 
@@ -455,7 +616,7 @@ new Vue({
 
   - 插槽占位符组件: `<slot name="..." />`在运行时会替换成组件的标签内容，可以使用name属性命名
 
-#### 2.2.8 路由
+### 2.11 路由
 
 - `router-view` 占位符: 路由系统提供的
   - 作用: 会扫描 浏览器的地址栏路径, 找到其对应的组件 进行展示
@@ -477,7 +638,7 @@ new Vue({
 
 
 
-#### 2.2.9Vuex
+### 2.12 Vuex
 
 全局状态共享: 把数据在多个.vue文件中共享
 
@@ -930,3 +1091,307 @@ export default defineComponent({
 
 ## 4.Vue实战
 
+### 4.1 模块
+
+#### 4.1.1 全局引入
+
+**main.js**
+
+```js
+//基本使用，引入外部模块，引入外部css,使用第三方模块
+import VueAwesomeSwiper from 'vue-awesome-swiper'
+import 'swiper/css/swiper.css'
+Vue.use(VueAwesomeSwiper)
+
+//结合使用外部模块
+import axios from 'axios'
+import VueAxios from 'vue-axios'
+//axios 是一个基于 promise 的 HTTP 库，axios并没有install 方法，所以是不能使用vue.use()方法的
+//因此需要引入'vue-axios'
+// 注意: axios.defaults.baseURL必须在 use 前设置
+axios.defaults.baseURL = 'http://www.code.com:9999/data/'
+Vue.use(VueAxios, axios)
+
+//引用模块中的方法
+//main.js中,将'mint-ui'的所有方法注入vue
+import MintUI from 'mint-ui';
+//.vue文件中,使用'mint-ui'中的indicator
+this.$indicator.close();
+```
+
+#### 4.1.2 局部引入
+
+在.vue文件的script中引入
+
+### 4.2 样式
+
+#### 4.2.1 全局样式
+
+css
+
+```css
+<script>
+  import 'swiper/css/swiper.css'
+</script>
+
+<style>...</style>
+```
+
+scss
+
+```scss
+<script>
+  import 'swiper/css/swiper.scss'
+</script>
+
+<style lang="scss"></style>
+```
+
+#### 4.2.2 局部样式
+
+css
+
+```css
+<style scoped></style>
+```
+
+scss
+
+```scss
+<style>
+/* css方式, 全局引入;  不写 lang 默认是css */
+/* @import方式 scoped 是局部生效, 但是只对 scss 有效, 对css没用 */
+@import url('./assets/css/base.css');
+</style>
+
+<style lang="scss" scoped></style>
+```
+
+### 4.3 路由
+
+#### 4.3.1 路由配置
+
+**router/index.js**
+
+```js
+//重定向
+const routes = [
+  {
+    path: '/',
+    redirect: '/home/index',
+ 	}
+]
+
+
+//懒加载
+const routes = [
+  {
+    path: '*', //通配符: 匹配所有不存在的路径
+    name: '404',
+    component: () => import('../views/NotFound.vue'),
+    meta: {
+      title: '404',
+    },
+ 	}
+]
+
+
+//非懒加载,使用频率高时使用，如首页
+import Index from '../views/Index.vue';
+const routes = [
+  {
+    path: '/', // 根路径
+    name: 'index',
+    component: Index, // Index.vue组件
+    meta: {
+      title: '首页',
+    },
+ }
+]
+```
+
+
+
+#### 4.3.2 路由守卫
+
+**router/index.js**
+
+```js
+router.beforeEach((to, from, next) => {
+  // console.log('to :>> ', to);
+  // console.log('from :>> ', from);
+  //meta.title是路由配置中自定义的
+  document.title = to.meta.title;
+  next();
+});
+```
+
+
+
+#### 4.3.3 路由传参【？】
+
+
+
+## 5. Vue内网穿透
+
+### 5.1 钉钉内网穿透工具
+
+#### 官方文档
+
+- <https://ding-doc.dingtalk.com/doc#/kn6zg7/hb7000>
+
+1. 下载工具
+
+   ```
+   git clone https://github.com/open-dingtalk/pierced.git
+   ```
+
+2. 执行命令 `./ding -config=./ding.cfg -subdomain=域名前缀 端口`。
+
+   以 Mac 为例：
+
+   ```
+   cd mac_64
+   chmod 777 ./ding
+   ./ding -config=./ding.cfg -subdomain=abcde 8080
+   ```
+
+   Windows：
+
+   ```
+   cd windows_64
+   ding.exe -config ding.cfg -subdomain xixi 8080
+   ```
+
+   启动后界面如下图所示：
+
+   ![](C:/Users/YLY/Desktop/pierced-master/assets/http-mac.png)
+
+   命令参数说明：
+
+   | 参数      | 说明                                                         |
+   | --------- | ------------------------------------------------------------ |
+   | config    | 内网穿透的配置文件，按命令照示例固定为钉钉提供的./ding.cfg，无需修改。 |
+   | subdomain | 您需要使用的域名前缀，该前缀将会匹配到“vaiwan.com”前面，例如你的 subdomain 是 abcde，启动工具后会将 abcde.vaiwan.com 映射到本地。 |
+   | 端口      | 您需要代理的本地服务 http-server 端口，例如你本地端口为 8080 等。 |
+
+3. 启动完客户端后，你访问 http://abcde.vaiwan.com/xxxxx 都会映射到 http://127.0.0.1:8080/xxxxx。
+
+#### 数据库穿透
+
+1. 下载工具
+
+   ```
+   git clone https://github.com/open-dingtalk/pierced.git
+   ```
+
+2. 执行命令 `./ding -config=./ding.cfg -proto=tcp start ssh`。
+
+   以 Mac 为例：
+
+   ```
+   cd mac_64
+   chmod 777 ./ding
+   ./ding -proto=tcp -config=./ding.cfg start ssh
+   ```
+
+   启动后界面如下图所示：
+
+   ![](vue.assets/db-mac.png)
+
+   命令参数说明：
+
+   | 参数   | 说明                                                         |
+   | ------ | ------------------------------------------------------------ |
+   | config | 内网穿透的配置文件，按命令照示例固定为钉钉提供的./ding.cfg，无需修改。 |
+   | proto  | 启动的是 TCP 协议穿透。                                      |
+
+3. 在数据库里面执行：
+
+   ```sql
+   GRANT ALL PRIVILEGES ON *.* TO root@'%' IDENTIFIED BY '123456';
+   FLUSH PRIVILEGES;
+   ```
+
+   注意 123456 是数据库远程登录的密码，root 为用户名。
+
+4. 数据库连接命令：
+
+   ```
+   mysql -h vaiwan.com -u root -p -P 1234 //端口号地址
+   ```
+
+   1234 是启动远程数据库连接默认的端口，可以在 ding.cfg 中进行修改。
+
+#### 注意
+
+1. 你需要访问的域名是 http://abcde.vaiwan.com/xxxxx 而不是 http://abcde.vaiwan.com:8082/xxxxx。
+
+2. 你启动命令的 subdomain 参数有可能被别人占用，尽量不要用常用字符，可以用自己公司名的拼音，例如：alibaba、dingding 等。
+
+3. 可以在本地起个 http-server 服务，放置一个 index.html 文件，然后访问 http://abcde.vaiwan.com/index.html 测试一下。
+
+### 5.2 Vue配置
+
+​	内网穿透成功之后，浏览器输入内网穿透工具生成的域名地址，但是依然访问不了当前本地的Web服务，页面显示Invalid Host header
+
+​	这是因为测试环境下的[webpack](https://so.csdn.net/so/search?q=webpack&spm=1001.2101.3001.7020)有一个host检查功能，因此需要进行配置。
+
+​	**注意**：配置vue.config.js后要`重启`项目
+
+**vue.config.js**
+
+```js
+const { defineConfig } = require('@vue/cli-service');
+module.exports = defineConfig({
+  transpileDependencies: true,
+  //配置devServer
+  devServer: {
+    allowedHosts: 'all',
+    historyApiFallback: true,
+  },
+});
+```
+
+配置完毕后，服务器app.js中需要进行跨域设置
+
+**app.js**
+
+```js
+server.use(
+  cors({
+    origin: ['http://xixi.vaiwan.com',],
+  })
+);
+```
+
+### 5.3 浏览器设置
+
+浏览器报错：`The request client is not a secure context and the resource is in more-private address space 'private'`.
+
+解决方法：
+
+- 浏览器输入：`edge://flags/#block-insecure-private-network-requests`
+
+- 将`Block insecure private network requests.`项的`Default`改为`Disabled`即可。
+
+### 5.4 电脑可访问，手机无法访问
+
+- 发送请求时使用`127.0.0.1`，该地址为**是回送地址**，指本地机，一般用来测试使用；也就是说“127.x.x.x”是本机回送地址，即主机IP堆栈内部的IP地址，主要用于网络软件测试以及本地机进程间通信。
+- 而数据库服务器并不在手机上，因此手机通过`127.0.0.1`地址发送axios请求不能得到数据
+
+### [问题]
+
+1.为什么内网穿透后，手机端用外网访问vue项目，发送请求的速度很慢？--timeout
+
+## 6 Vue developTools
+
+### 6.1 安装
+
+在浏览器中安装`vue.js devtools`插件
+
+### 6.2 注意事项
+
+- 网页必须应用Vue.js功能，才能看到Vue DevTools
+- 网页必须使用Vue.js而不是Vue.min.js
+- 网页需要在http协议下打开，而不是file协议本地打开

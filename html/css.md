@@ -651,7 +651,17 @@ https://developer.mozilla.org/zh-CN/docs/Learn/CSS/Building_blocks/Cascade_and_i
 * 权值跃进，并不是十进制的。组合权值的跃进值，权值累加但不会越级。
 * !important提升优先级，出现的场景使用UI框架中与框架样式冲突的自定义样式可以加
 
+### 2.6 穿透
 
+- vue组件编译后，会将 template 中的每个元素加入 [data-v-xxxx] 属性来确保 style scoped 仅本组件的元素而不会污染全局
+
+- 如果需要局部修改第三方组件样式，又不想去除scoped属性造成组件间的样式污染，可以使用`>>>`方式穿透scope。
+
+```css
+.rich-content >>> img {
+  max-width: 100vw;
+}
+```
 
 ## 3 常见属性
 
