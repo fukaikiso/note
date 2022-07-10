@@ -6,7 +6,21 @@
 
 ## 1.vue-cli
 
+- [vue/cli](https://cli.vuejs.org/zh/guide/)  是一个基于Vue.js进行快速开发的完整系统，称为脚手架工具
+
+- 初始化配置项目依赖
+
+- 提供单文件组件
+
 ### 1.1 创建项目包
+
+#### 1.1.1 安装/升级脚手架
+
+安装：`npm install -g @vue/cli`
+
+升级：`npm update -g @vue/cli`
+
+#### 1.1.2 创建命令
 
 `vue create 项目名`
 
@@ -19,6 +33,18 @@
 ```powershell
 vue create [项目名称]
 ```
+
+#### 1.1.3 手动配置项
+
+- ( ) Babel ：转码器，可以将ES6代码转为ES5代码，从而在现有环境执行。
+-  TypeScript： TypeScript是一个JavaScript（后缀.js）的超集（后缀.ts）包含并扩展了 JavaScript 的语法需要被编译输出为 JavaScript在浏览器运行
+- ( ) Progressive Web App (PWA) Support：渐进式Web应用程序
+- ( ) Router ： vue-router（vue路由）
+- ( ) Vuex ： vuex（vue的状态管理模式）
+- ( ) CSS Pre-processors ： CSS 预处理器（如：less、sass）
+- ( ) Linter / Formatter ：代码风格检查和格式化（如：ESlint）
+- ( ) Unit Testing ：单元测试（unit tests）
+- ( ) E2E Testing ： e2e（end to end） 测试
 
 ### 1.2 运行服务器
 
@@ -127,7 +153,7 @@ new Vue({
 
   - `props:{}`
   - 理解成 组件的形参, 接收组件使用时传入的实参
-  - 父子传参：`props:{[....]}`
+  - 父子传参：`props:[....]`
   - 精确配置：`props:{kw:{default: 1}} `...
 
 - watch：监听器，监听一个属性的变化
@@ -169,9 +195,9 @@ new Vue({
   - 使用：`{{ 值 | 过滤器 }}`
   - 配置：`func(值){...}`，返回值就是过滤后的结果
 
-#### 2.1.4 生命周期【...】
+#### 2.1.4 生命周期
 
-- 
+- 见2.8
 
 #### 2.1.5 事件与特殊属性
 
@@ -516,40 +542,538 @@ new Vue({
 
 ### 2.7 组件
 
-- 用于拆分大型页面, 拆分成多个独立的`.vue`文件 -- 团队合作, 复杂->简单
-- 存放在 components 目录里
-- 文件名要求 `最好` 大驼峰, 至少两个单词
-  - 原因: 怕和系统标签重名
-- 推荐根元素的 class名 是 文件名的 `中划线命名法`
-- 组件使用分三步: `引入` -=> `注册` ->`使用`
-  - 引入
-    - `import ... from './components/...'`
-    - export default 中`components: { MyFooter }`
-  - 注册
-    - 普通方式:  `components: {组件名}`
-    - 自定义方式: `components:{ 自定义名称: 组件 }`
-  - 使用: 单标签 + 双标签 + 大驼峰 + 中划线 写法都支持
-    - 推荐:`<xxx-xxx />`
+- 本质上，组件是可复用的Vue实例，所以它们可以与new Vue接收相同的选项，例如data,methods以及生命周期钩子等。
+
+- 像el这样根实例特有的属性除外
+
+#### 2.7.1 注册
+
+**`全局注册`**：必须设置在根Vue实例创建之前（new之前）
+
+```js
+Vue.component('组件名',{
+  /*选项对象*/
+  template:'<div>这是组件</div>'
+  data(){
+  	return {
+      title:'my com'
+    }
+	}
+})
+```
+
+- **命名规则**
+
+  - kebab-case:`my-component`
+
+  - PascalCase:`MyComponent`
+
+
+​			**注意**：DOM中只能用kebab-case，因为标签解析时不区分大小写
+
+- **template选项**
+  - 只能有一个根元素
+
+- **data选项**
+
+  - 组件的data选项必须为函数，数据设置在返回值对象中
+
+  - 确保每个组件实例可以维护一份被返回对象的独立拷贝，不会相互影响
+
+**`局部注册`**：局部注册的组件只能用在当前实例或组件中
+
+```js
+new Vue({
+  components:{
+    'my-com-a':{
+      template:'<div>这是组件a</div>'
+      data(){
+        return {
+          title:'my com a'
+        }
+      }
+    },
+    'my-com-b':{
+      template:'<div>这是组件a\b</div>'
+      data(){
+        return {
+          title:'my com b'
+        }
+      }
+    },
+  }
+})
+```
+
+单独配置组件的选项对象：
+
+```js
+var MyComA = {...}
+var MyComB = {...}
+new Vue({
+  el:'#app',
+  components:{
+    MyComA,
+    MyComB
+  }
+})
+```
+
+#### 2.7.2 组件通信
+
+- App.vue
+  - <自定义组件  :需要传的参数="..."  />
+- 自定义组件组件
+  - export default中`props: ['参数']`
+
+组件通信：组件件传递数据的操作
+
+**`父组件向子组件`**
+
+- 子组件使用props选项接收父组件的传值
+  - `props: ['参数1','参数2']`
+  - 注意：props不要与data存在同名属性
+- 父组件使用动态属性绑定
+  - `<自定义组件  :参数1="..." :参数2="..."   />`
+  - 将需要传递的参数存储到data中
+- props属性命名规则
+  - 建议prop命名使用小驼峰
+  - 父组件绑定时使用kebab-case，因为标签内不区别大小写
+- 单向数据流：只能由父组件影响子组件，如果子组件要处理prop数据，应当存储在data中后操作
+  - `props: ['initialTitle']`
+  - `data(){return title:this.initialTitle}`
+  - **注意**：若prop传递的数据为对象，由于存储的是地址，所以子组件修改对象内容，可能会影响父组件
+  - 若不希望子组件影响父组件，可以将对象在data中进行拷贝，或者不将对象整体传入，传对象.属性
+- props验证:将props更改为一个带有验证需求的对象，并指定对应类型
+  - 类型限制：type
+  - 是否必须：required
+  - 默认值：default，当父组件未传递数据时生效，与required不共存，当默认值为数组或对象时，必须为工厂函数的形式，避免引用类型在多个组件中使用时相互影响
+  - 内容验证：validator
+  - **注意**：default及validator中的函数无法用this访问实例，因为验证工作是在实例创建前执行，this指向window
+
+```js
+props:{
+  parStr:{
+    //限制为单个类型
+    type:String，
+    //是否必须
+    required:true,
+    //设置内容验证
+    validator(value){
+      return value.startsWith('hello')
+    }
+    
+  },
+  
+  parArrNum:{
+    //限制为多个类型
+    type:[Array,Number],
+    //默认值
+    defalut:2333,
+  },
+    
+  parArr:{
+    type:Array,
+    //默认值为数组或对象需要用工厂函数
+    defalut(){return [1,2,3]},
+  },
+    
+	//直接限制类型
+  parAny:null
+}
+```
+
+- 非props属性
+  - 当父组件给子组件设置了属性，单此属性不在子组件props中，这时会自动绑定到子组件的根元素上
+  - 若子组件已存在对应属性，则会替换组件内部的值，class与style例外，当内外都设置时，属性会自动合并
+  - 若不希望继承父组件设置的属性，可以设置ineritAttrs:false，只适用于普通属性，class与style不受影响
+
+**`子组件向父组件`**
+
+- 子向父传值需要通过自定义事件实现
+
+  - 子组件数据变化时，通过$emit(自定义事件名称，参数1，参数2…)触发自定义事件，参数为可选项
+
+  - 父组件监听子组件的自定义事件，并设置处理程序
+
+  - 需要传参时，父组件使用$event获取参数
+
+
+```js
+//基础写法
+//父组件监听子组件的自定义事件
+<自定义组件 @count-change="totalCount++">
+  
+//子组件通过$emit()触发自定义事件
+methods:{
+  countIns(){
+    //用kebab-case命名
+    this.$emit('count-change')
+    this.count ++
+  }
+}
+
+
+//传参写法
+//父组件监听子组件的自定义事件
+//事件不显示传参数，默认第一个参数是$event
+<自定义组件 @count-change="onCountChange">
+//此处等同于<自定义组件 @count-change="totalCount += $event">
+  
+//子组件通过$emit()触发自定义事件
+methods:{
+  countIns1(){
+    //用kebab-case命名
+    this.$emit('count-change'，1)
+    this.count ++
+  },
+  countIns5(){
+    //用kebab-case命名
+    this.$emit('count-change'，5)
+    this.count += 5
+  },
+  //此处event即为$event
+  onCountChange(event){
+    this.totalCount += event
+  }
+}
+```
+
+- 组件与v-model
+  - v-model用于组件时，需要通过props与自定义事件实现
+
+```js
+//父组件
+//v-model默认传入了:value="iptValue"
+<自定义组件 v-model="iptValue">
+  
+//子组件
+//数据接收
+props:['value'],
+//数据显示:value=，数据发送@input
+//:value是子组件的value设置为动态属性，"value"是父组件v-model默认传入的value
+//@input是子组件监听的事件，'input'是触发父组件的input事件
+template:`<input type="text" :value="value" @input=$emit('input',$event.target.value)></input>`,
+```
+
+**`非父子组件组件`**
+
+- 兄弟组件传值
+  - 兄弟组件可以通过父组件进行数据中转
+- EventBus：事件总线
+  - 当组件嵌套关系复杂时，根据组件关系传值会较为繁琐，组件为了数据中转，data中会存在许多与当前组件无关的数据
+  - EventBus是一个独立的事件中心，用于管理不同组件间的传值操作
+  - EventBus通过一个新的Vue实例来管理组件传值操作，组件通过给实例注册事件、调用来实现数据传递，一般新建EventBus.js来存储实例。
+  - 发送数据的组件触发bus事件，接收的组件给bus注册对应事件
+
+```js
+//EventBus.js
+var bus = new Vue()
+
+//发送数据的子组件通过bus.$emit()触发自定义事件
+methods:{
+  countIns(){
+    bus.$emit('countChange'，1)
+    this.count ++
+  },
+}
+
+//接收数据的组件通过bus.$on()注册对应事件
+//当前实例创建完毕后，才能够使用data等功能
+created(){
+  //给bus注册事件，并接收数据
+  bus.$on('countChange'，(event)=>{
+    this.totalCount += event
+  })
+},
+
+
+```
+
+**`其他通信方式`**
+
+- `$root`：用于访问当前组件树根实例，设置简单的Vue应用时可以通过此方式进行组件传值
+  - 根实例数据可以被任意组件访问，因此不利于维护
+  - 同类型还有`$parent`,`$children`
+- `$refs`
+  - 给普通HTML标签设置ref属性，$refs可以获取DOM对象
+  - 给子组件设置ref，渲染后可通过$refs获取子组件实例
+  - 同样可以被任意组件访问，因此不利于维护
+
+#### 2.7.3组件插槽
+
+- 单个插槽
+  - 平时书写的组件，组件内容会被忽略`<my-com>这里书写内容不会显示</my-com>`
+  - 要显示内部html内容 ，就需要用插槽
+  - 必须配合template使用
+
+```html
+<com>
+  组件内部的html会传入slot中
+  这里只能访问父组件的数据，因为该标签在父组件的视图模板中
+</com>
+
+<!-- vue1 <div slot="menu">这是菜单内容 vue1</div> -->
+<!-- vue2: 必须配合 template 标签用 -->
+<template v-slot:menu>
+    <h2>哈哈哈哈</h2>
+</template>
+
+<!-- vue3: 必须配合 template, 语法糖# -->
+<template #menu>
+    <h2>哈哈哈哈</h2>
+</template>
+```
+
+```js
+Vue.component('com-a',{
+  template:`<div>
+  					<h3>这是组件</h3>
+  					<slot>可以设置默认文本</slot>
+  					</div>`
+})
+```
+
+- 具名插槽
+  - 组件中有多个位置设置插槽，根据需要给slot设置name
+
+```html
+<com>
+  <!--template内容占位符-->
+  <template v-slot:header>
+  	<h1>组件头部</h1>
+  </template>
+  <template v-slot:default>
+  	<p>组件主体</p>
+  </template>
+  <template v-slot:footer>
+  	<p>组件头部</p>
+  </template>
+</com>
+```
+
+```js
+Vue.component('com-a',{
+  template:`<div class="container">
+  						<header>
+  							<slot name="header"></slot>
+  						</header>
+  						<main>
+  							<slot></slot>
+  						</main>
+  						<footer>
+  							<slot name="footer"></slot>
+  						</footer>
+  					</div>`
+})
+```
+
+- 作用域插槽
+  - 用于插槽可以使用子组件内部数据
+
+```html
+<com>
+  //dataObj是子组件绑定的所有数据组成的对象
+  <template v-slot:default="dataObj">
+    {{dataObj.value}}
+  </template>
+</com>
+
+//若只有一个插槽，可以简写
+<com  v-slot="dataObj">
+    {{dataObj.value}}
+</com>
+
+//ES6解构赋值
+<com  v-slot="{value,num}">
+    {{value,num}}
+</com>
+```
+
+```js
+Vue.component('com-a',{
+  //"value","num"是子组件的数据
+  template:`<div>
+  						<slot :value="value" :num="num">默认文本</slot>
+  					</div>`
+})
+```
+
+#### 2.7.4 内置组件
+
+- 动态组件
+
+  - 适合于多个组件频繁切换的处理
+  - `<component :is=“com”></component>`，用is属性值决定渲染哪个组件，com为组件名称
+  - 通过事件修改com，从而切换组件
+  - is属性会在每次切换组件时，Vue都会创建一个 新的 组件实例
+
+- keep-alive
+
+  - 主要用于保留组件状态或避免组件重新渲染
+
+  - include可选，代表哪些组件可以保活，不写代表所有都保活
+
+  - exclude可选，代表哪些组件不保活，用法同include
+
+  - max，设置最大缓存个数，距离当前操作最近的max个操作可以被缓存
+
+    ```html
+    //注意：此处ComA,ComB,ComC间不能有空格，否则只能识别到ComA，因为这里是字符串
+    <keep-alive include="ComA,ComB,ComC">
+      <component :is="currentCom"></component>
+    </keep-alive>
+    
+    //可以用动态属性绑定
+    <keep-alive :include="[ComA, ComB, ComC]">
+      <component :is="currentCom"></component>
+    </keep-alive>
+    
+    //也可以用正则
+    <keep-alive :include="/Com[ABC]/">
+      <component :is="currentCom"></component>
+    </keep-alive>
+    ```
+
+- 过渡组件: 用于Vue插入、更新或者移除DOM时，提供多种不同方式的应用过渡，动画效果
+
+  - transition组件：用于给元素和组件进入、离开（v-if, v-show, 动态组件, 组件根节点）显示效果
+
+    - 未设置name时，style中使用v-来设置样式
+    - name：用于给多个元素、组件设置不同的过渡效果，style中v-修改为name-
+    - appear：在组件初始渲染时也使用进入的过渡样式
+  
+    ```html
+    //进入
+    //v-enter:入场前的样式，元素还未显示
+    //v-enter-to：入场后，显示完全，动画已结束时，一般不设置，采用默认
+    //v-enter-active:入场过程的动画
+    //出场
+    //v-leave
+    //v-leave-to，一般不设置，采用默认
+    //v-leave-active
+    <transition appear>
+    	<p v-if="showDemo">hello,world</p>
+    </transition>
+    
+    <style>
+      .v-enter-active,v-leave-active {
+        transition: all 0.5s;
+      }
+      .v-enter,v-leave-to {
+        opacity: 0;
+      }
+    </style>
+    
+    
+    ```
+  
+  - 自定义类名：自定义类名优先级比普通类名高，在使用三方css动画库时非常有用（例如：[animate.css](https://animate.style/)）
+  
+    ```html
+    //enter-class
+    //enter-active-class
+    //enter-to-class
+    //leave-class
+    //leave-active-class
+    //leave-to-class
+    //appear-class
+    //appear-active-class
+    //appear-to-class
+    <transition>
+      //会使用test覆盖掉v-enter的样式
+    	<p v-if="showDemo" enter-class="test" >hello,world</p>
+    </transition>
+    
+    <style>
+      .v-enter-active,v-leave-active {
+        transition: all 0.5s;
+      }
+      .v-enter,v-leave-to {
+        opacity: 0;
+      }
+      
+      .test {
+        transition: all 3s;
+      }
+    </style>
+    ```
+  
+  - transition-group：用于给列表统一设置过渡动画
+  
+    - tag属性用于设置容器元素，默认为span
+    - 过渡会应用于内部元素，而不是容器
+    - 子节点必须有独立的key，动画才能正常工作
+    - v-move: 设置列表变更导致元素位移的过渡效果
+  
+    ```html
+    <transition-group tag="ul">
+    	<li v-for="item in items" :key="item.id"></li>
+    </transition-group>
+    
+    <style>
+      .v-enter-active,v-leave-active {
+        transition: all 0.5s;
+      }
+      
+      /*让元素在离场时脱离标准流*/
+      .v-leave-active {
+        position:absolute;
+      }
+      
+      .v-enter,v-leave-to {
+        opacity: 0;
+      }
+      .v-move {
+        transition: all 0.5s;
+      }
+    </style>
+    ```
+  
+  
 
 ### 2.8 生命周期
 
-- 作用： 配合网络请求用, 实现自动发请求的操作
-- 钩子函数: 在固定事件发生时, 自动触发的函数就叫 钩子函数
-  - 创建: 内存中,还没显示到页面
-    - 创建前: beforeCreate
-    - 创建完: created
+#### 2.8.1 概述
 
-  - 挂载: 显示到页面上
-    - 挂载前: beforeMount
-    - 挂载完: mounted
+作用： 配合网络请求用, 实现自动发请求的操作
 
-  - 更新: 页面发生更新
-    - 更新前: beforeUpdate
-    - 更新完: updated
+![Vue 实例生命周期](vue.assets/lifecycle.png)
 
-  - 销毁: 组件被移除
-    - 移除前: beforeDestroy
-    - 移除后: destroyed
+#### 2.8.2 钩子函数
+
+钩子函数: 在固定事件发生时, 自动触发的函数就叫 钩子函数
+
+- 创建: 内存中,还没显示到页面，每个实例只能执行一次
+  - 创建前: beforeCreate
+    - 实例初始化之前调用
+    - data,methods等还未创建
+  - 创建完: created
+    - 实例创建后调用
+    - data,methods已创建，可请求数据存储到data
+  
+- 挂载: 显示到页面上，每个实例只能执行一次
+  - 挂载前: beforeMount
+    - 实例挂载之前调用
+    - 页面模板内容还未添加到dom中
+  - 挂载完: mounted
+    - 实例挂载之前调用
+    - 可以操作dom
+  
+- 更新: 页面发生更新，按需调用
+  - 更新前: beforeUpdate
+    - 数据更新后，视图更新前
+    - 可以操作更新之前的视图结构
+  - 更新完: updated
+    - 视图更新后调用
+  
+- 销毁: 组件被移除
+  - 移除前: beforeDestroy
+    - 实例销毁之前调用
+    - 实例功能还能使用
+  - 移除后: destroyed
+    - 实例销毁后调用
+    - 实例功能不能使用
 
 
 ```js
@@ -579,66 +1103,410 @@ new Vue({
   },
 ```
 
-### 2.9 父子组件传参
+### 2.9 路由
 
-- App.vue
-  - <自定义组件  :需要传的参数="..."  />
-- 自定义组件组件
-  - export default中`props: ['参数']`
+#### 2.9.1 单页应用
 
-### 2.10 插槽
+- SPA：single page Application，单页面应用程序，简称单页应用
+- 指的是网站的所有功能都再单个页面中进行呈现
+- 具有代表性的有后台管理系统，移动端，小程序等
+- 与传统的多页应用相比：
+  - 多页面应用在切换时会发生跳转，单页面切换时只是切换了页面中的内容
+  - 优点
+    - 前后端分离开发，提高开发效率
+    - 业务场景切换时，局部更新结构
+    - 用户体验好，更加接近本地应用
+  - 缺点
+    - 不利于SEO
+    - 初次首屏加载速度较慢
+    - 页面复杂度比较高
 
-- App.vue
+#### 2.9.2 前端路由
 
-  - 必须用双标签书写，例如`<my-slot></my-slot>`
+- 路由：接收不同的数据，传送给不同的设备
+- 前端路由，指的是URL与内容间的映射关系
+- Hash方式
+  - 通过hashchange事件监听hash变化，并进行网页内容更新
+  - Hash兼容性好
+  - 地址中有#不太美观
+  - 前进后退功能较为繁琐
 
-  - 向指定name属性的插槽中存放内容：
+```html
+//示例使用
+<div>
+  <a href="#">首页</a>
+  <a href="#/category">分类页</a>
+  <a href="#/user">用户页</a>
+</div>
+<div id="container"> 
+  这是首页内容
+</div>
 
-    ```vue
-    <!-- 指定向 名字是 menu的插槽里放东西 -->
-    <!-- vue1 -->
-    <div slot="menu">这是菜单内容 vue1</div>
-    <!-- vue2: 必须配合 template 标签用 -->
-    <template v-slot:menu>
-        <h2>哈哈哈哈</h2>
-    </template>
-    <!-- vue3: 必须配合 template, 语法糖# -->
-    <template #menu>
-        <h2>哈哈哈哈</h2>
-    </template>
-    ```
+<script>
+var container = document.getElementById('container')
+window.onhaschange = function(){
+  var hash = location.hash.replace('#','')
+  var str = ''
+  switch(hash){
+    case '/':
+      str = '这是首页'
+      break
+    case '/category':
+      str = '这是分类页'
+      break
+    case '/user':
+      str = '这是用户页'
+      break
+  }
+  container.innerHTML = str
+}
+</script>
 
+//封装
+<script>
+  
+	var router = {
+    //路由存储位置，保存了url与内容处理函数的对应关系
+    routes:{},
+    //定义路由规则的方法
+    route:function(path,callback){
+      this.routes[path] = callback
+    }
+    //初始化方法
+    init:function(){
+      //that指向router
+      var that= this
+      //当路由改变，需要获得新 Hash
+      window..onhaschange = function(){
+         var hash = location.hash.replace('#','')
+         //如果这里用this会指向window,因此要在外层用that存储router的this
+         that.routes[hash] && that.routes[hash]()
+      }
+    }
+  }
+  
+  var container = document.getElementById('container')
+  
+  //定义路由对象
+  router,route('/',function(){
+    container.innerHTM = '这是首页'
+  })
+  router,route('/category',function(){
+    container.innerHTM = '这是分类页'
+  })
+  router,route('/user',function(){
+    container.innerHTM = '这是用户页'
+  })
+  router.init()
+</script>
+```
+
+- History方式
+  - History方式采用HTML5提供的新功能实现前端路由
+  - history.pushState()变更URL并执行对应操作（页面不会进行跳转）
+
+```html
+//示例使用
+<div>
+  <a href="#">首页</a>
+  <a href="#/category">分类页</a>
+  <a href="#/user">用户页</a>
+</div>
+<div id="container"> 
+  这是首页内容
+</div>
+
+<script>
+  var container = document.getElementById('container')
+  var router = {
+      //路由存储位置，保存了url与内容处理函数的对应关系
+      routes:{},
+      //定义路由规则的方法
+      route:function(path,callback){
+        this.routes[path] = callback
+      }
+      //跳转方法
+      go:function(path){
+        //参数1：与当前路径相关的数据
+        //参数2：传入标题
+        //参数3：url修改为哪个地址
+        history.pushState({path:path},null,path)
+        this.routes[path] && this.routes[path]()
+      }
+  		//初始化，通过popstate事件建通前进后退按钮操作，并检测state
+  		init:function(){
+        var that = this
+        window.addEventListner('popstate',function(e){
+          //e.state中存储的是pushState中的信息
+          //即popState跳转时，
+          var path = e.state ? e.state.path:'/'
+          that.routes[path] && that.routes[path]()
+        })
+      }
+    }
     
+    var container = document.getElementById('container')
+    //设置a标签的功能
+    var links = document.querySelectorAll('a')
+    links.forEach(ele => {
+      ele.addEventListener('click',function(event){
+        //获取地址并修改url
+        router.go(this.getAttribute('href'))
+        //阻止默认跳转
+        event.preventDefault()
+      })
+    })
+  
+  	//定义路由对象
+    router,route('/',function(){
+      container.innerHTM = '这是首页'
+    })
+    router,route('/category',function(){
+      container.innerHTM = '这是分类页'
+    })
+    router,route('/user',function(){
+      container.innerHTM = '这是用户页'
+  	})
+  	//监听前进后退操作
+  	router.init()
+</script>
+```
 
-- 组件
+#### 2.9.1 Vue Router
 
-  - 一种特殊的组件: 负责布局, 没有实际内容
+- Vue Router是Vue Router的官方插件，需要先引用Vue，再引用Vue Router，用来快速实现单页应用
+- 基本使用
 
-  - 插槽占位符组件: `<slot name="..." />`在运行时会替换成组件的标签内容，可以使用name属性命名
+```html
+//视图结构
+//声明式导肮
+<router-link to="path"></router-link>
+<router-view></router-view>
+```
 
-### 2.11 路由
+```js
+//首先要引入vue,vue-router
 
-- `router-view` 占位符: 路由系统提供的
-  - 作用: 会扫描 浏览器的地址栏路径, 找到其对应的组件 进行展示
-- 组件:如果是路由切换的组件, 则必须存储在`views`目录里
-  - 命名大驼峰, 不需要必须2个单词
-- 路由配置文件: `router/index.js`
-  - 配置 path 路径 和 组件的对应关系
-  - props属性: 为true, 代表允许组件通过 props 属性接收路由参数
-  - 路径
-    - `*`: 通配符, 匹配所有没有的路径
-    - `/`: 根路径 首页 
-    - `/???`: 自定义的其他路径
-- 传参的两种方式:
-  - 传统: `路径?参数=值&参数=值...`
-  - 新的: `路径/值/值/值`  需要配合 路由的配置 `path:'/路径/:参数/:参数'`
+//定义路由中使用的组件
+var Index = {...}
+//存储路由规则
+var routes = [{...}]
+
+//创建VueRouter示例
+var Router = new VueRouter({
+	routes : routes
+})
+
+//创建vue实例，并将router属性注入路由
+var vm = new Vue({
+	el : '#app',
+	//专门设置router的属性
+	router : router
+})
+```
+
+- 命名视图
+  - 导航后，希望同级展示多个视图（组件），就需要进行命名视图
+  - 多个<router-view>只能有一个不写name，不写默认为default
+
+```html
+//视图结构
+<router-link to="path"></router-link>
+<router-view></router-view>
+<router-view name="siderBar"></router-view>
+```
+
+```js
+{
+  path : '/',
+  components:{
+    sideBar : SideBar,
+    default : Index
+  }
+}
+```
+
+- 动态路由
+  - 将某类url都映射到同一个组件上，就需要动动态路由
+  - 定义路由规则时，将路径中的某个部分使用`:`进行标记，即可设置为动态路由
+  - `:`部分对应的信息称为路径参数，存储再`vm.$route.params`中
+
+```html
+<router-link to="/user/1"></router-link>
+```
+
+```js
+{
+  path : '/user/:id',
+  components: User
+}
+```
+
+- 侦听路由参数
+  - 如果要响应路由的参数变化，可以通过watch监听$route
+
+```js
+//组件中
+watch:{
+  $route(newValue){
+    //$route.params.id
+    ...
+  }
+}
+```
+
+- 路由传参处理
+  - 当需要在其他组件中使用时，就需要路由传参
+  - 通过路由的props设置数据，并通过组件props接收
+  - 多个组件时，可以将props设置为对象
+
+```js
+{
+  path : '/category/:id',
+  components:Category,
+  props:true
+}
+
+var Category = {
+  props:['id'],
+  template:'<div>{{id}}</div>'
+}
+
+//给指定组件传props,需要在配置路由时，将props设置为对象
+{
+  path : '/category/:id',
+  components:{
+    default : Category,
+    sideBar : SideBar
+  },
+  props:{
+    default:true,
+    sideBar:false
+  }
+}
+
+//给组件传静态数据
+{
+  path : '/category/:id',
+  components:{
+    default : Category,
+    sideBar : SideBar
+  },
+  props:{
+    default:true,
+    sideBar:{a:'aaa',b:'bbb'}
+  }
+}
+```
+
+- 嵌套路由
+  - 路由多层嵌套，使用children进行路由设置
+
+```js
+{
+  path : '/user',
+  components:User,
+  children:[
+    {
+      //注意这里没有/
+      path:'hobby',
+      component:UserHobby
+    },
+    {
+      path:'info',
+      component:UserInfo,
+      children:[
+        {
+          path:'age',
+          component:UserInfoAge
+        }
+      ]
+    }
+  ]
+}
+```
+
+- 编程式导航
+  - 通过编程的方式，进行导航设置
+  - `vm.$router.push(url)`
+  - `vm.$router.push({path:url})`
+  - 命名路由:在设置路由时添加name属性
+
+```js
+//path太长时，可以使用路由命名
+{
+  path : '/user/:id/info/school',
+  name: 'school',
+  components:UserInfoSchool,
+}
+//使用时，可以直接用name，不用书写长的path，还可以传其他数据
+vm.$router.push({name:'school',params:{id:20,demo:'其他数据'}})
+
+//也可以在声明式导航中使用，注意to要加:
+<router-link :to="{name:'school',params:{id:20}}">用户学校 <router-link>
+```
+
+- 重定向
+  - 避免用户访问无效路由
+  - 在路由配置中使用`redirect`
+
+```js
+[
+  {
+  	path : '/',
+  	components:Index,
+	},
+  {
+    //当路径为/index时，重定向到/
+    path:'/index',
+    redirect:'/'
+  }
+]
+```
+
+- 别名
+  - 别名时美化路由功能的方式，简化url的显示
+  - 在路由配置中使用`alias`
+
+```js
+{
+  path:'/user/:id/info/school/intro/:date',
+  name:'school',
+  component:School,
+  alias:'/:id/:date'
+}
+
+<router-link to="/10/0612">用户学校 <router-link>
+```
+
+- 导航守卫
+  - 路由发生跳转时，判断是否能够访问
+
+```js
+//路由配置文件中
+router.beforeEach((to, from, next) => {
+  // console.log('to :>> ', to);
+  // console.log('from :>> ', from);
+  //meta.title是路由配置中自定义的
+  document.title = to.meta.title;
+  //next()放行跳转,next(false)阻止跳转，next('/login')跳转至某个页面
+  next();
+});
+```
+
+- history模式
+  - Vue Router实例的mode选项来设置，不写为hash模式
+  - 这样URL更美观，但是需要后端支持避免问题(例如刷新跳转)
+
+```js
+var router = new VueRouter({
+  mode:history
+})
+```
 
 
-> router-view -> 查找浏览器地址栏 -> 到 index.js 中匹配 -> 找到组件
 
-
-
-### 2.12 Vuex
+### 2.10 Vuex
 
 全局状态共享: 把数据在多个.vue文件中共享
 
@@ -1169,6 +2037,24 @@ scss
 
 ### 4.3 路由
 
+- `router-view` 占位符: 路由系统提供的
+  - 作用: 会扫描 浏览器的地址栏路径, 找到其对应的组件 进行展示
+- 组件:如果是路由切换的组件, 则必须存储在`views`目录里
+  - 命名大驼峰, 不需要必须2个单词
+- 路由配置文件: `router/index.js`
+  - 配置 path 路径 和 组件的对应关系
+  - props属性: 为true, 代表允许组件通过 props 属性接收路由参数
+  - 路径
+    - `*`: 通配符, 匹配所有没有的路径
+    - `/`: 根路径 首页 
+    - `/???`: 自定义的其他路径
+- 传参的两种方式:
+  - 传统: `路径?参数=值&参数=值...`
+  - 新的: `路径/值/值/值`  需要配合 路由的配置 `path:'/路径/:参数/:参数'`
+
+
+> router-view -> 查找浏览器地址栏 -> 到 index.js 中匹配 -> 找到组件
+
 #### 4.3.1 路由配置
 
 **router/index.js**
@@ -1228,9 +2114,110 @@ router.beforeEach((to, from, next) => {
 
 
 
-#### 4.3.3 路由传参【？】
+#### 4.3.3 路由传参
+
+1. 方案1：查询字符串传参        
+
+   ```html
+   <router-link to="/article?id=237">跳转</router-link>
+   ```
+
+   在article页面中获取参数id：
+
+   ```
+   let id = this.$route.query.id
+   ```
+
+2. 方案2：路径传参
+
+   ```html
+   <router-link to="/article/237">跳转</router-link>
+   ```
+
+   在article页面中获取藏在路径最后一部分的字符串：
+
+   ```javascript
+   //如下配置路由：
+   {
+       path: '/article/:id',
+       component: Article.....
+   }
+   ```
+
+   ```javascript
+   this.$route.params.id
+   ```
+
+   
 
 
+
+#### 4.3.4 页面保活机制
+
+当从详情页回到首页时，默认的`VueRouter`机制将会重新加载`Index.vue`，重新执行`mounted`生命周期方法，自然也会重新加载所有的数据，渲染界面。但是有时希望`Index.vue`保持原有的状态：跳转到详情页时组件不销毁，当从详情页返回到首页时，还可以维持详情页原有的状态。
+
+使用`keep-alive`组件使`router-view`显示的组件具有保活特性。
+
+```html
+<keep-alive>
+	<router-view />
+</keep-alive>
+```
+
+实际开发中，有些页面需要保活，有些页面不需要保活（例如详情页）。所以有如下经典配置：
+
+```javascript
+{
+    path: '/index',
+    component: Index,
+    meta: {
+        keepAlive: true
+    }
+},{
+  	path: '/Article',
+    component: Article
+}
+```
+
+```html
+<keep-alive>
+	<router-view v-if="$route.meta.keepAlive"/>
+</keep-alive>
+<router-view v-if="!$route.meta.keepAlive"/>
+```
+
+一旦开启页面保活，该页面组件将会解锁两个生命周期方法：
+
+```javascript
+/** 页面保活后，解锁该生命周期方法。 当页面被激活时执行 */
+activated(){
+    console.log('activited...')
+    this.isLoading = false  // 启用无限滚动
+},
+
+/** 页面保活后，解锁该生命周期方法。 当页面隐藏到后台时执行 */
+deactivated(){
+    console.log('deactivited...')
+    this.isLoading = true // 禁用无限滚动
+}
+```
+
+### 4.4 组件
+
+- 用于拆分大型页面, 拆分成多个独立的`.vue`文件 -- 团队合作, 复杂->简单
+- 存放在 components 目录里
+- 文件名要求 `最好` 大驼峰, 至少两个单词
+  - 原因: 怕和系统标签重名
+- 推荐根元素的 class名 是 文件名的 `中划线命名法`
+- 组件使用分三步: `引入` -=> `注册` ->`使用`
+  - 引入
+    - `import ... from './components/...'`
+    - export default 中`components: { MyFooter }`
+  - 注册
+    - 普通方式:  `components: {组件名}`
+    - 自定义方式: `components:{ 自定义名称: 组件 }`
+  - 使用: 单标签 + 双标签 + 大驼峰 + 中划线 写法都支持
+    - 推荐:`<xxx-xxx />`
 
 ## 5. Vue内网穿透
 

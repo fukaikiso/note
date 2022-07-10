@@ -303,7 +303,6 @@ b_show()
                     lock = false
                 }, delay)
             }
-
         }
 
         reg.onclick = throttle(5000)
