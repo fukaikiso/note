@@ -14,6 +14,8 @@ $ git init [project-name]
 # repo为git仓库，directory为本地目录
 $ git clone <repo> [directory]
 
+# 克隆指定分支
+
 # 下载一个项目和它的整个代码历史
 # project-name可选，代表自定义项目目录名称
 $ git clone <url> [project-name]
