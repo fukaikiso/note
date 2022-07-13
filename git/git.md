@@ -135,7 +135,11 @@ $ git branch -D [branch-name]
 $ git push origin --delete [branch-name]
 $ git branch -dr [remote/branch]
 
+# 将本地分支上传到远程
+$ git push origin 本地分支:远程分支
 
+# 将远程分支拉到本地
+$ git pull <远程主机名> <远程分支名>:<本地分支名>
 ```
 
 ### **标签**
@@ -320,6 +324,9 @@ $ git add .
 
 //将代码提交到本地仓库中
 $ git commit -m "注释内容"
+
+//.gitignore清除缓存
+$ git rm -r --cached .
 ```
 
 
@@ -339,7 +346,7 @@ $ git pull <远程主机名> <远程分支名>
 $ git push <远程主机名> <远程分支名>
 
 //取消代理
-$git config --global --unset http.proxy
+$ git config --global --unset http.proxy
 ```
 
 同时提交到github和gitee : 修改.git->config->url
