@@ -347,6 +347,24 @@ $ git push <远程主机名> <远程分支名>
 
 //取消代理
 $ git config --global --unset http.proxy
+
+
 ```
 
 同时提交到github和gitee : 修改.git->config->url
+
+
+
+## 常见问题
+
+```bash
+// error: failed to push some refsto‘远程仓库地址’
+$ git pull --rebase origin master
+
+//fatal: unable to access'https://github.com/fukaikiso/cakeShop.git/': Failed to connect to github.com port 443 after 21063 ms: Timed out
+//fatal: unable to access 'https://github.com/fukaikiso/cakeShop.git/': OpenSSL SSL_read: Connection was reset, errno 10054
+//重启bash
+$ git config --global --unset http.proxy
+
+```
+
