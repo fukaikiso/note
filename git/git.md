@@ -327,6 +327,10 @@ $ git commit -m "注释内容"
 
 //.gitignore清除缓存
 $ git rm -r --cached .
+
+//将主分支覆盖某分支
+$ git checkout 分支名
+$ git reset --hard origin/master
 ```
 
 

@@ -280,6 +280,7 @@
 
 ```json
 //设置里搜索semicolon
+prettier:semi
 ```
 
 ### **格式化代码不换行**
