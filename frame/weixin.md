@@ -915,6 +915,7 @@ https://api.tedu.cn/index.php?cid=3&offset=25
 我们发现，当`onLoad`时、`tapNav`时、`onReachBottom`时都需要发送`https`请求加载电影列表，所不同的是，不同场景下传递的参数不同，拿到结果后处理的后续业务不同。所以有必要封装一个方法：`loadData`方法，用于发送加载电影列表请求，并且返回最终列表查询结果。
 
 ```javascript
+// 回调方法的设计
 loadData(cid, offset, callback){
     // 发送请求，加载热映类别下 首页的电影列表
     wx.request({
@@ -923,16 +924,30 @@ loadData(cid, offset, callback){
         data: {cid,  offset},
         success: (res)=>{
             console.log("加载首页数据：", res)
-            callback(res.data)
+            callback(res.data)  // 通过回调方法的方式返回
         }
     })
 }
 
+// 基于Promise的设计
+loadData(cid, offset){
+    return new Promise((resolve, reject)=>{
+    	// 发送请求，加载热映类别下 首页的电影列表
+        wx.request({
+            url: 'https://api.tedu.cn/index.php',
+            method: 'GET',
+            data: {cid,  offset},
+            success: (res)=>{
+                console.log("加载首页数据：", res)
+                resolve(res.data)
+            }
+        })    
+    }) 
+}
 
 onLoad(){
-	this.loadData(1, 0, (data)=>{
-        data就是发请求之后，返回回来的电影列表
-        xxxxx
+	this.loadData(1, 0).then((data)=>{
+        data就是Promise通过resolve回传回来的res.data 数组
     })
 },
     
@@ -944,6 +959,537 @@ onReachBottom(){
 	this.loadData(xxxx, xxxx)
 }
 ```
+
+
+
+#### 小程序缓存设计方案
+
+**什么是缓存？**
+
+客户端发送第一次请求，加载列表数据，加载完毕后将数据保存在客户端中（客户端缓存）。这样当客户端再次发送相同请求时，就可以先去缓存中找一圈，看以前存过没，如果存过，直接拿来用。如果没存过，再发请求。
+
+**如何使用小程序在客户端缓存中存储数据？**
+
+```javascript
+wx.setStorage({
+    key: '自定义key值',
+    data: '具体数据'
+})
+```
+
+**如何使用小程序从客户端缓存中取出数据？**
+
+```javascript
+wx.getStorage({
+    key: '自定义key值',
+    success: (data)=>{},
+    fail: (err)=>{}
+})
+```
+
+**缓存的实现麻烦在需要根据不同的项目的业务形态，来选择合适的时机更新缓存。**常见的缓存方案：
+
+1. 有的缓存定时更新。每天早上更新、每小时更新、每分钟更新等。
+2. 有的缓存第一次打开时更新。     进入小程序时，删掉缓存即可。
+3. 通常情况下，都会为列表提供一个下拉刷新操作。加载最新数据的同时更新缓存。
+
+
+
+#### 基于下拉刷新更新列表，并更新缓存
+
+1. 开启当前页面的下拉刷新功能。
+
+   在页面的`json`配置文件中，开启下拉刷新功能。
+
+   ```javascript
+   {
+     "usingComponents": {},
+     "enablePullDownRefresh": true,
+     "backgroundColor": "#444"
+   }
+   ```
+
+2. 当监听到用户下拉刷新操作时，发送`https`请求，加载最新数据，更新列表，更新缓存。
+
+   ```javascript
+   Page({
+       onPullDownRefresh(){
+           ....
+       }
+   })
+   ```
+
+   
+
+
+
+### 小程序的位置信息-更新左上角城市名
+
+微信小程序提供了一个`API`用于获取客户端的经纬度：
+
+```javascript
+wx.getLocation({
+    ....
+    success: (res)=>{
+        .....
+    }
+})
+```
+
+如果除了经纬度之外还需要做**逆地理编码（通过经纬度获取具体地名字符串）**，这个方法就不够用了，需要接入第三方的位置服务：腾讯位置服务。
+
+
+
+#### 接入第三方的位置服务：腾讯位置服务 - `lbs.qq.com`
+
+![image-20220725142038574](C:\Users\web\AppData\Roaming\Typora\typora-user-images\image-20220725142038574.png)
+
+
+
+1. 登录`lbs.qq.com`。
+
+2. 点击右上角 -- 控制台，进入后台管理页面。打开我的应用。
+
+   ![image-20220725143913671](C:\Users\web\AppData\Roaming\Typora\typora-user-images\image-20220725143913671.png)
+
+3. 创建应用：
+
+   ![image-20220725144256258](C:\Users\web\AppData\Roaming\Typora\typora-user-images\image-20220725144256258.png)
+
+4. 填写表单申请`key`：
+
+   ![image-20220725144752088](C:\Users\web\AppData\Roaming\Typora\typora-user-images\image-20220725144752088.png)
+
+5. 在小程序管理后台，将`https://apis.map.qq.com`添加到合法域名列表中。
+
+   在[小程序管理后台](https://mp.weixin.qq.com/wxamp/home/guide) -> 开发 -> 开发管理 -> 开发设置 -> “服务器域名” 中设置request合法域名，添加https://apis.map.qq.com。
+
+   在小程序开发工具中，验证，是否添加成功：
+
+   ![image-20220725145811973](C:\Users\web\AppData\Roaming\Typora\typora-user-images\image-20220725145811973.png)
+
+6. 写代码访问腾讯位置服务。
+
+   ```javascript
+   // 引入SDK核心类，js文件根据自己业务，位置可自行放置
+   var QQMapWX = require('../../libs/qqmap-wx-jssdk.js');
+   var qqmapsdk = new QQMapWX({
+       key: '申请的key'
+   });
+   qqmapsdk.search({
+       keyword: '酒店',
+       success: (res)=>{  查询成功 res结果..  },
+       fail: (err)=>{ 查询失败 }
+   })
+   ```
+
+   
+
+### 小程序的位置信息-更新左上角城市名
+
+1. 封装一个方法：`getLocationInfo()` 用于获取城市名称，在`onLoad`时调用该方法。
+
+2. 在`getLocationInfo()`方法中访问腾讯位置服务，调用`reverseGeocoder`方法获取城市名称（需要在`app.json`配置权限）。
+
+   ```javascript
+   getLocationInfo(){
+       let QQMapWX = require('../../libs/qqmap-wx-jssdk')
+       let qqmapsdk = new QQMapWX({
+           key: 'A7CBZ-FZ73U-PUPV7-BINEG-ICD57-KAB6J'
+       })
+       qqmapsdk.reverseGeocoder({
+           success: (res)=>{
+               ..... res.result.address_component.city
+           }
+       })
+   }
+   ```
+
+   `app.json`，申请定位权限。
+
+   ```json
+   "permission": {
+       "scope.userLocation": {
+           "desc": "赶紧给我权限，不给手机爆炸，5/4/3/2.."
+       }
+   },
+   ```
+
+3. 将`city`在页面中显示出来。在`data`中声明变量：`city`。
+
+
+
+### 实现电影详情页
+
+1. 下载 `movie.wxss` `movie.wxml`，创建页面：`pages/movie/movie`。替换掉`wxml`与`wxss`即可。
+
+2. 点击首页列表项，跳转到详情页，显示电影详情。
+
+   1. 跳转的过程需要传参：需要将选中项电影的ID传递给`movie`页面。
+   2. 在`movie`页面中接收ID，发送`https`请求加载当前ID的电影详细信息。
+   3. 获取到详细信息后，渲染页面。
+
+   |          | 说明                             |
+   | -------- | -------------------------------- |
+   | 请求地址 | `https://api.tedu.cn/detail.php` |
+   | 请求方式 | `GET`                            |
+   | 请求参数 | `id`:待查询的电影ID              |
+   | 返回结果 | 相应ID的电影的详细数据           |
+
+   ```
+   https://api.tedu.cn/detail.php?id=233
+   ```
+
+   
+
+#### 渲染页面
+
+1. 渲染头部基本信息区域。
+
+2. 渲染简介区域。
+
+3. 渲染演职人员列表 与 导演列表。
+
+4. 渲染剧照列表。
+
+   1. 将剧照列表显示出来。`mode="aspectFill"`
+
+   2. 点击剧照图片，打开新窗口，以高清大图方式显示剧照图片列表。
+
+      ```javascript
+      wx.previewImage()
+      ```
+
+   3. 重新修改每一个图片的路径，改为高清图片（去掉@后缀）
+
+   4. 点击剧照中的某一张时，需要向事件处理函数传递参数`index`，显示当前选中的图片。
+
+   5. 处理事件委托。
+
+
+
+## 8 小程序云开发
+
+腾讯拿出一部分云服务器为小程序开发者准备了一整套开发后端程序的云开发架构。使得小程序开发者可以不必过多了解后端知识，也可以完成正常的前后端交互。
+
+云开发提供的基本能力有：
+
+1. 云数据库    云开发提供了一个云端数据库可以让小程序开发者直接在小程序端直接操作数据的增删改查。
+2. 云存储   云开发提供了一个云服务资源用于文件存储。可以让小程序开发者在小程序端直接进行文件的上传于下载。
+3. 云函数   云开发提供了一个云服务器资源用于提供网络服务接口。可以让小程序开发者在小程序端编写函数，通过开发工具将函数部署至云端，并且在小程序端调用这些云端函数。
+
+
+
+### 接入云开发平台
+
+打开小程序开发工具，点击工具栏中的云开发按钮，开通云开发。
+
+填写云服务器的名字（`web2203`），选择个人账户预付款-资源均衡性-0元/月免费版
+
+点击确定后，小程序将会为开发者分配云服务器资源（初始化）等待即可。
+
+
+
+### 云数据库
+
+云数据库是一个可以让小程序开发者在前端直接操作的云端数据库。与`mysql`不同，云数据库是一款基于`json`的非关系型数据库。
+
+mysql:
+
+| id   | name | age  | gender | school_id |
+| ---- | ---- | ---- | ------ | --------- |
+| 1    | zs   | 18   | m      | 1         |
+| 2    | ls   | 19   | f      | 2         |
+| 3    | ww   | 20   | m      | 1         |
+
+| id   | name     | loc    | area |
+| ---- | -------- | ------ | ---- |
+| 1    | 清华大学 | 五道口 | 1000 |
+| 2    | 北京大学 | 中关村 | 850  |
+
+小程序云数据库：
+
+```json
+[
+    {
+        id:1,
+        name:zs,
+        age:18,
+        gender:m,
+        school: {
+            id:1,
+            name: 清华大学,
+            loc: 五道口,
+            area: 1000
+        }
+    },
+    {
+        id:2,
+        name:ls,
+        age:19,
+        gender:f,
+        school: {
+            id:2,
+            name: 北京大学,
+            loc: 中关村,
+            area: 850
+        }
+    },
+    {
+        id:3,
+        name:ww,
+        age:20,
+        gender:m,
+        school: {
+            id:1,
+            name: 清华大学,
+            loc: 五道口,
+            area: 1000
+        }
+    }
+]
+```
+
+上述数据，从云数据库的角度可以如下描述：
+
+有一个**集合**，里面存储了3条**记录**（3篇**文档**），每一条记录包含5个**字段**。不同的字段拥有不同的数据类型。其中`school`字段属于**对象类型**，包含4个**属性**。
+
+
+
+### 通过小程序提供的相关`API`操作云数据库
+
+
+
+#### 添加数据
+
+```javascript
+let db = wx.cloud.database()
+db.collection('test').add({
+    data: {待添加的对象},
+    success: (res)=>{
+        console.log(添加成功后的回调)
+    }
+})
+```
+
+案例：点击按钮，向test集合中添加一条记录。
+
+1. 新建云开发项目。选择**使用云开发**。
+2. 新建页面：`pages/db/db`，设计个按钮，点击后添加一条记录。
+
+**注意事项**
+
+当使用`collection.add()`方法添加新记录时，小程序不仅会将该记录添加到集合中，而且会为该记录分配两个字段：`_id`    `_openid`。
+
+`_id`: 自动生成的当前文档的主键ID。（不重复）
+
+`_openid`: 该字段用于表明当前记录属于哪一个用户。同一个用户向集合中添加的记录所自动生成的`_openid`字段值是相同的。云数据库使用该字段可以方便的解决集合的权限问题。
+
+
+
+#### 查询数据
+
+通过ID查询一条记录
+
+```javascript
+let db = wx.cloud.database({env: 环境ID});
+db.collection('test').doc("记录 _id").get({
+    success: (res)=>{
+        res就是查询结果
+    }
+})
+```
+
+通过where条件查询多条记录
+
+```javascript
+let db = wx.cloud.database({env: 环境ID});
+db.collection('test').where({
+    gender: '男'
+}).get().then(res=>{
+    
+})
+```
+
+
+
+### 实现学子影院详情评论列表的展示
+
+1. 新建云开发项目。学子影院云开发版         `/day07/demo/xzyycloud`
+
+2. 将`xzyy`中的资源拖拽到新项目的`miniprogram`中即可。
+
+   ```
+   需要拖拽的资源：
+   /images
+   /libs
+   /pages
+   app.js
+   app.json
+   app.wxss
+   ```
+
+3. 打开详情页面，在`onLoad`的时候，查询云数据库，获取当前电影的影评列表。
+
+4. 在页面中完成列表渲染。
+
+
+
+### `Collection`对象
+
+`db.collection('test')`可以获取操作`test`集合的`Collection`对象：
+
+| 方法                | 说明               |
+| ------------------- | ------------------ |
+| Collection.doc()    | 通过ID查询一条记录 |
+| Collection.get()    | 开启查询云数据库   |
+| Collection.where()  | 添加筛选条件       |
+| Collection.skip(n)  | 跳过n行            |
+| Collection.limit(n) | 向后查询n条        |
+| Collection.add()    | 添加记录           |
+| Collection.update() | 修改记录           |
+| Collection.remove() | 删除记录           |
+| ...                 | ...                |
+
+如何查询年龄小于30的用户？
+
+```javascript
+let _ = db.command
+db.collection('test').where({
+    age: _.lt(30)
+}).get()
+```
+
+API 提供了以下查询指令：
+
+| 查询指令 | 说明                 |
+| :------- | :------------------- |
+| eq       | 等于                 |
+| neq      | 不等于               |
+| lt       | 小于                 |
+| lte      | 小于或等于           |
+| gt       | 大于                 |
+| gte      | 大于或等于           |
+| in       | 字段值在给定数组中   |
+| nin      | 字段值不在给定数组中 |
+
+更多具体的查询指令 `API` 文档可参考[数据库 API 文档](https://developers.weixin.qq.com/miniprogram/dev/wxcloud/reference-sdk-api/database/Command.html)。
+
+
+
+### 在首页中实现选择城市业务
+
+在首页中，点击左上角城市名，跳转页面，进入城市列表页，在城市列表页选择一个城市，返回首页，更新左上角城市名称。
+
+1. 新建城市列表页面。`pages/citylist/citylist`。
+
+2. 在城市列表页中显示所有的城市信息。
+
+   1. 点击侧边栏字母后，将`scrollview`滚动到相应位置：
+
+      ```html
+      <scroll-view scroll-into-view="{{letter}}">
+          <view id="A">A</view>
+          <view id="B">B</view>
+          <view id="C">C</view>
+          <view id="D">D</view>
+         	...
+      </scroll-view>
+      ```
+
+3. 点击某一个城市，回传给首页。
+
+   首页中点击左上角，跳转到城市列表页。
+
+   在城市列表页中选择某一个城市，获取城市名称，<span style="color:red">将城市名称存入app.js中（全局唯一，全局共享）</span>
+
+   ```javascript
+   getApp().globalData.city = '北京市'
+   ```
+
+   当回到首页后，将会执行`onShow`生命周期方法，可以在此处访问`app.js`，拿到城市名称，更新左上角。
+
+   ```javascript
+   let c = getApp().globalData.city
+   this.setData({city : c})
+   ```
+
+4. 在首页中拿到数据后，更新左上角城市名称。
+
+5. 在城市列表页中重新加载当前城市信息。
+
+6. 点击当前城市名称`text`后，将城市名称存入`globalData`，回到上一页。
+
+
+
+### 处理未授权时的城市选择业务
+
+点击重新授权，弹出引导窗口，引导用户进入设置页，修改权限。
+
+
+
+### 加载影院模块影院列表
+
+点击影院底部选项卡，在影院页面中加载当前选中城市的电影院列表。
+
+**实现步骤**
+
+1. 去`ftp`下载 `theatre.zip`。解压之后将四件套覆盖现有的`theatre`目录。
+2. 加载当前城市名。
+3. 加载当前城市中所有的电影院。
+4. 列表渲染。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
