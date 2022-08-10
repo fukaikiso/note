@@ -1441,6 +1441,351 @@ API 提供了以下查询指令：
 
 
 
+### `event.target`与`event.currentTarget`的区别
+
+二者都是用于获取事件源对象，不同的是`event.target`拿到的是点击时的最底层的子元素；而`event.currentTarget`拿到的是绑定事件的那个元素（无论是冒泡触发的，还是直接触发的）
+
+```html
+<view class="v1" bindtap="tapview" data-i="1">
+	<view class="v2" data-i="2"></view>
+</view>
+```
+
+```javascript
+tapview(event){
+    event.target
+    event.currentTarget
+}
+```
+
+当点击v2，触发tap事件，该事件由于冒泡，也将执行v1的tapview方法：
+
+event.target:     **v2**     因为点击的最底层的元素是v2。
+
+event.currentTarget:      **v1**    因为事件处理函数绑定在v1上。
+
+当点击v1，触发tap事件，该事件也将执行tapview方法：
+
+event.target:     **v1**   因为点击的最底层的元素是v1。
+
+event.currentTarget:   **v1**    因为事件处理函数绑定在v1上。
+
+
+
+### 小程序自定义组件
+
+微信官方提供了很多组件用于编写页面结构。有很多团队在此基础之上重新封装了很多好用的组件组成了小程序自定义组件库。例如：`vant`组件库。可以使用如下标签来编写页面结构：
+
+```html
+<van-button></van-button>
+<van-cell></van-cell>
+<van-image></van-image>
+......
+```
+
+小程序开放了一些自定义组件的接口，可以允许用户进行组件化编程。
+
+#### 基于自定义组件制作一个自己的按钮组件
+
+```html
+<my-button title="按钮上的字" 
+           color="按钮的颜色" 
+           round
+           bind:doubletap="handleDoubletap"></my-button>
+
+handleDoubletap(){
+	console.log('么么哒...')
+}
+```
+
+
+
+#### 创建一个自定义组件
+
+1. 新建小程序`Component`，（小程序开发工具右键即可选择新建组件）。
+
+2. 在组件的wxml中编写组件的基本结构，在wxss中编写组件的基础样式。
+
+3. 当需要使用该组件时，在`json`配置文件中引入该组件，然后再页面里就可以通过自定义组件标签使用该组件。
+
+   ```json
+   me.json
+   {
+       "usingComponents": {
+           "my-button": "/components/mybutton/index"
+           自定义标签名 :  组件路径
+       }
+   }
+   ```
+
+   ```html
+   me.wxml
+   <my-button></my-button>
+   ```
+
+   
+
+#### 为自定义组件设计自定义属性
+
+```html
+<my-button title="按钮上的字"></my-button>
+```
+
+`my-button`组件在显示文本时，需要查看组件的`title`属性，`title`属性是什么，按钮上就显示什么。
+
+1. 在组件的`index.js`中，声明该自定义属性：
+
+   ```javascript
+   Component({
+       properties: {
+           "title" : {
+               type: String,
+               value: '按钮文本'   // 属性默认值：按钮文本
+           }
+       }
+   })
+   ```
+
+2. 在组件的wxml中使用该属性一起渲染组件显示效果：
+
+   ```html
+   <view class="button">{{title}}</view>
+   ```
+
+3. 在使用该组建时，为该属性赋值（传参）：
+
+   ```html
+   <my-button title="重新赋值新文本"></my-button>
+   ```
+
+   
+
+#### 为组件设计自定义事件
+
+1. 在使用子组件时，经常需要捕获到子组件执行过程中的某一个时间节点后执行某些业务逻辑。就需要为组件设计自定义事件。
+
+   ```html
+   <scroll-view bind:scolltoupper=""></scroll-view>
+   <input bind:input=""/>
+   <my-button bind:doubletap=""></my-button>
+   ```
+
+   自定义事件的流程：
+
+   1. 在子组件内部通过捕获基础事件找到触发自定义事件的时间节点。
+   2. 调用`this.triggerEvent()`触发该自定义事件。
+   3. 如果父组件在使用该子组件时，绑定了该自定义事件的处理函数，则会自动调用。
+
+
+
+### `Vant`组件库
+
+下载安装并且引入：
+
+1. 通过`npm`命令，初始化项目，安装`vant`组件库。
+
+   ```shell
+   # 进入项目的miniprogram文件夹后执行命令：
+   npm init -y
+   npm i @vant/weapp -S --production
+   ```
+
+   完毕后，将会在`miniprogram`文件夹下出现`package.json`与`node_modules`文件夹。
+
+2. 修改`app.json`，去掉`style:'v2'`。
+
+3. 点击小程序开发工具左上角：工具--构建`npm`。即可完成代码的编译构建。
+
+   一旦构建完毕后，小程序开发工具将会把`node_modules`中的源代码编译到`miniprogram_npm`目录下。
+
+4. 开始使用`vant`组件库。
+
+   
+
+
+
+### 微信登录
+
+微信小程序官方提供了一个获取用户微信昵称、头像等资料的`API`：
+
+```
+wx.getUserProfile({
+	success: (res)=>{
+	
+	}
+})
+```
+
+通过`success`可以获取微信的昵称与头像。
+
+如果希望实现一个完整的登录业务（可以在小程序中自己维护用户信息、修改头像、昵称、新增手机号、身份证号等字段），必然需要将用户数据存自己家数据库。而不是每次使用都去直接访问微信。
+
+**所以一个完整的登录流程如下：**
+
+1. 在自家数据库中建用户表，收集用户数据：
+
+   | id   | openid  | nickName | avatarUrl     | age  | phone   | ...  |
+   | ---- | ------- | -------- | ------------- | ---- | ------- | ---- |
+   | 1    | 568sd5a | zs       | http://zs.jpg | 11   | 1333333 | ...  |
+   | 2    | 6845945 | ls       | http://ls.jpg | 13   | 1444444 | ...  |
+   | ...  | ...     | ...      | ...           | ...  | ...     | ...  |
+
+2. 当用户第一次微信登录时，需要将用户的信息存入自家数据库。
+
+3. 当用户再次登录时，拿到微信信息后，还需要查询自己家数据库该用户信息，获取最新的头像、昵称，显示在界面中。
+
+
+
+### 登录成功后实现头像的修改
+
+登录成功后，点击头像，跳转到图库（打开摄像机拍照）选择图片。更新`avatarUrl`。但是这种操作只能本地修改，如果重新登录，头像依然是微信头像。如果希望持久化保存头像，需要将头像上传到文件服务器，把`users`数据库中的头像访问路径更新掉才可以。
+
+#### 本地头像的修改
+
+登录成功后，点击头像，跳转到图库（打开摄像机拍照）选择图片。更新`avatarUrl`。
+
+```javascript
+wx.chooseMedia({
+    count: 1,
+    mediaType: ['image'],
+    success: (res)=>{
+    	....  
+        let path = res.tempFiles[0].tempFilePath
+    }
+})
+```
+
+
+
+#### 持久化修改头像
+
+1. 小程序通过`wx.chooseMedia`方法选择图片，获取选中图片的路径。
+2. 将选中的图片上传至服务器，从而获取一个可以在任何网络环境下都可以直接访问的图片链接地址：`https://host/xxx/xxxx/xxx.jpg` 。在此，可以将图片上传至小程序**云存储**空间。云存储类似一个网盘，小程序可以通过`API`实现文件的上传与下载。
+3. 上传完毕后，将会立即得到访问该图片的路径。
+4. 将访问路径更新到云数据库的`avatarUrl`字段即可。这样当以后用户登录时，就可以直接拿到最新的头像路径，从云存储中访问头像图片。
+
+
+
+#### 云存储上传文件`API`
+
+在小程序端通过以下代码实现文件的上传：
+
+```javascript
+wx.cloud.uploadFile({
+    filePath: '',     // 本地待上传文件的路径
+    cloudPath: '',    // 上传至云存储后，在云端存储时使用的文件路径（不可重复）
+    success: (res)=>{
+        .....
+    }
+})
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
