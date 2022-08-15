@@ -73,8 +73,8 @@ npm run build
 **vue项目执行npm run build之后生成的dist文件**，**不能直接通过vscode开启服务访问，会报错**
 
 ```shell
-安装
-serve  npm install serve -S -g 
+安装serve  
+npm install serve -S -g 
 启动服务
 serve dist
 ```
